@@ -138,52 +138,72 @@ class GPUResourceManager:
     @staticmethod
     async def check_for_provider(
         provider: str,
+        model: str | None = None,
         ollama_url: str = "http://localhost:11434",
         lmstudio_url: str = "http://localhost:1234"
     ) -> dict[str, Any]:
-        """Check loaded models in OTHER providers before loading a new one.
+        """Check loaded models in THIS and OTHER providers before loading a new one.
 
         Call this BEFORE making a vision request to avoid GPU memory overflow.
-        If the OTHER provider (not the current one) has models loaded,
-        returns collision info.
+        Checks:
+        1. If THIS provider already has a DIFFERENT model loaded (conflict)
+        2. If OTHER provider has any models loaded (collision)
 
         Args:
             provider: Current provider name ("ollama" or "lmstudio")
+            model: The model being requested (to check if same model already loaded)
             ollama_url: Ollama server URL
             lmstudio_url: LM Studio server URL
 
         Returns:
             Dict with:
                 - can_proceed: True if safe to load model
-                - other_provider_models: Models in the other provider
-                - other_provider: Name of the other provider
-                - warning: Warning message if collision detected
+                - current_provider_loaded: Models in current provider
+                - other_provider_models: Models in other provider
+                - same_model_loaded: True if same model already in current provider
+                - warnings: List of warning messages
         """
+        warnings = []
+        same_model_loaded = False
+
         if provider == "ollama":
             other_provider = "lmstudio"
+            current_models = await GPUResourceManager.get_ollama_loaded_models(ollama_url)
             other_models = await GPUResourceManager.get_lmstudio_loaded_models(lmstudio_url)
         else:
             other_provider = "ollama"
+            current_models = await GPUResourceManager.get_lmstudio_loaded_models(lmstudio_url)
             other_models = await GPUResourceManager.get_ollama_loaded_models(ollama_url)
 
-        can_proceed = len(other_models) == 0
-        warning = None
+        if current_models:
+            current_model_names = [m.get("display_name") or m.get("key") or m or "?" for m in current_models]
+            if model and model in current_model_names:
+                same_model_loaded = True
+            else:
+                warnings.append(
+                    f"{provider.capitalize()} already has model(s) loaded: {', '.join(current_model_names)}. "
+                    f"Requesting model '{model}' will replace the current model."
+                )
 
         if other_models:
-            model_names = [m.get("display_name") or m.get("key") or m.get("name", "?") for m in other_models]
-            if isinstance(other_models[0], str):
-                model_names = other_models
-            warning = (
-                f"GPU WARNING: {other_provider.capitalize()} has {len(other_models)} model(s) loaded: {', '.join(model_names)}. "
+            other_model_names = [m.get("display_name") or m.get("key") or m or "?" for m in other_models]
+            warnings.append(
+                f"GPU WARNING: {other_provider.capitalize()} has {len(other_models)} model(s) loaded: {', '.join(other_model_names)}. "
                 f"Loading in {provider} may cause GPU memory overflow on residential GPUs."
             )
-            logger.warning(warning)
+
+        can_proceed = len(warnings) == 0 or same_model_loaded
+
+        for w in warnings:
+            logger.warning(w)
 
         return {
             "can_proceed": can_proceed,
+            "current_provider_loaded": current_models,
             "other_provider_models": other_models,
             "other_provider": other_provider,
-            "warning": warning,
+            "same_model_loaded": same_model_loaded,
+            "warnings": warnings,
         }
 
     @staticmethod

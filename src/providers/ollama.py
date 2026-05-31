@@ -43,13 +43,10 @@ class OllamaProvider(VisionProvider):
         """Analyze image using Ollama API."""
         model = self.validate_model(model)
 
-        gpu_status = await GPUResourceManager.check_for_provider("ollama", self.base_url)
-        if not gpu_status["can_proceed"]:
-            logger.warning(
-                f"GPU memory warning before Ollama request: "
-                f"{gpu_status['other_provider']} has models loaded. "
-                f"Proceeding anyway but may cause memory issues."
-            )
+        gpu_status = await GPUResourceManager.check_for_provider("ollama", model, self.base_url)
+        if gpu_status["warnings"]:
+            for warning in gpu_status["warnings"]:
+                logger.warning(f"GPU check: {warning}")
 
         is_valid, error_msg = self.validate_image(image_data)
         if not is_valid:
@@ -133,13 +130,10 @@ class OllamaProvider(VisionProvider):
         """Compare multiple images using Ollama API."""
         model = self.validate_model(model)
 
-        gpu_status = await GPUResourceManager.check_for_provider("ollama", self.base_url)
-        if not gpu_status["can_proceed"]:
-            logger.warning(
-                f"GPU memory warning before Ollama compare: "
-                f"{gpu_status['other_provider']} has models loaded. "
-                f"Proceeding anyway but may cause memory issues."
-            )
+        gpu_status = await GPUResourceManager.check_for_provider("ollama", model, self.base_url)
+        if gpu_status["warnings"]:
+            for warning in gpu_status["warnings"]:
+                logger.warning(f"GPU check: {warning}")
 
         images_b64 = [base64.b64encode(img).decode("utf-8") for img in image_datas]
 

@@ -30,13 +30,10 @@ class LMStudioProvider(VisionProvider):
         """Analyze image using LM Studio API (OpenAI-compatible)."""
         model = model or "qwen/qwen3-vl-4b"
 
-        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", lmstudio_url=self.base_url)
-        if not gpu_status["can_proceed"]:
-            logger.warning(
-                f"GPU memory warning before LM Studio request: "
-                f"{gpu_status['other_provider']} has models loaded. "
-                f"Proceeding anyway but may cause memory issues."
-            )
+        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", model, lmstudio_url=self.base_url)
+        if gpu_status["warnings"]:
+            for warning in gpu_status["warnings"]:
+                logger.warning(f"GPU check: {warning}")
 
         is_valid, error_msg = self.validate_image(image_data)
         if not is_valid:
@@ -127,13 +124,10 @@ class LMStudioProvider(VisionProvider):
         """Compare multiple images using LM Studio API."""
         model = model or "qwen/qwen3-vl-4b"
 
-        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", lmstudio_url=self.base_url)
-        if not gpu_status["can_proceed"]:
-            logger.warning(
-                f"GPU memory warning before LM Studio compare: "
-                f"{gpu_status['other_provider']} has models loaded. "
-                f"Proceeding anyway but may cause memory issues."
-            )
+        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", model, lmstudio_url=self.base_url)
+        if gpu_status["warnings"]:
+            for warning in gpu_status["warnings"]:
+                logger.warning(f"GPU check: {warning}")
 
         image_contents = []
         for img_data in image_datas:
