@@ -20,13 +20,14 @@ class ProviderFactory:
     }
 
     @classmethod
-    def get(cls, name: str, config: Any) -> VisionProvider:
+    def get(cls, name: str, config: Any, debug: bool = False) -> VisionProvider:
         """
         Get a provider instance by name.
 
         Args:
             name: Provider name (ollama, openrouter, openai, lmstudio)
             config: Configuration object
+            debug: Enable debug mode for request/response logging
 
         Returns:
             VisionProvider instance
@@ -39,7 +40,7 @@ class ProviderFactory:
             raise ValueError(f"Unknown provider '{name}'. Available: {available}")
 
         provider_class = cls._providers[name]
-        return provider_class(config)
+        return provider_class(config, debug=debug)
 
     @classmethod
     def list_providers(cls) -> list[str]:

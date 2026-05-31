@@ -72,7 +72,8 @@ async def analyze_image(args):
         print(f"Config error: {e.message}")
         return 1
 
-    provider = ProviderFactory.get(config.provider, config)
+    debug = getattr(args, 'debug', False)
+    provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     with open(args.image, "rb") as f:
         image_data = f.read()
@@ -106,7 +107,8 @@ async def describe_image(args):
         print(f"Config error: {e.message}")
         return 1
 
-    provider = ProviderFactory.get(config.provider, config)
+    debug = getattr(args, 'debug', False)
+    provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     with open(args.image, "rb") as f:
         image_data = f.read()
@@ -138,7 +140,8 @@ async def identify_objects(args):
         print(f"Config error: {e.message}")
         return 1
 
-    provider = ProviderFactory.get(config.provider, config)
+    debug = getattr(args, 'debug', False)
+    provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     with open(args.image, "rb") as f:
         image_data = f.read()
@@ -169,7 +172,8 @@ async def read_text(args):
         print(f"Config error: {e.message}")
         return 1
 
-    provider = ProviderFactory.get(config.provider, config)
+    debug = getattr(args, 'debug', False)
+    provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     with open(args.image, "rb") as f:
         image_data = f.read()
@@ -244,21 +248,25 @@ def main():
     analyze_parser.add_argument("--prompt", default="Describe this image in detail", help="Analysis prompt")
     analyze_parser.add_argument("--model", help="Model to use")
     analyze_parser.add_argument("--detail-level", choices=["brief", "standard", "detailed"], help="Detail level")
+    analyze_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
     describe_parser = subparsers.add_parser("describe", help="Describe an image")
     describe_parser.add_argument("--image", required=True, help="Path to image file")
     describe_parser.add_argument("--type", choices=["simple", "detailed", "verbose"], default="detailed")
+    describe_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
     identify_parser = subparsers.add_parser("identify", help="Identify objects in an image")
     identify_parser.add_argument("--image", required=True, help="Path to image file")
     identify_parser.add_argument("--include-count", action="store_true", help="Include object counts")
     identify_parser.add_argument("--include-location", action="store_true", help="Include object locations")
     identify_parser.add_argument("--categories", help="Filter by categories (comma-separated)")
+    identify_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
     readtext_parser = subparsers.add_parser("read-text", help="Extract text from an image")
     readtext_parser.add_argument("--image", required=True, help="Path to image file")
     readtext_parser.add_argument("--preserve-formatting", action="store_true", help="Preserve text formatting")
     readtext_parser.add_argument("--language-hint", help="Language hint (e.g., en, pt)")
+    readtext_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")

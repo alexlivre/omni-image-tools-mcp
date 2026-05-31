@@ -3,6 +3,7 @@
 import httpx
 import base64
 import logging
+import time
 from typing import Any
 
 from .base import VisionProvider
@@ -13,11 +14,12 @@ logger = logging.getLogger(__name__)
 class OpenRouterProvider(VisionProvider):
     """OpenRouter API provider for cloud vision models."""
 
-    def __init__(self, config: Any):
+    def __init__(self, config: Any, debug: bool = False):
         super().__init__(config)
         self.api_key = config.api_key
         self.default_model = config.openrouter.default_model if config.openrouter else "google/gemini-2.5-flash"
         self.timeout = config.timeout
+        self.debug = debug
 
     async def analyze(
         self,
@@ -33,6 +35,7 @@ class OpenRouterProvider(VisionProvider):
             raise ValueError(error_msg)
 
         image_b64 = base64.b64encode(image_data).decode("utf-8")
+        image_size_kb = len(image_data) / 1024
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -52,6 +55,24 @@ class OpenRouterProvider(VisionProvider):
             ],
         }
 
+        if self.debug:
+            print(f"\n{'='*60}")
+            print(f"DEBUG MODE - OpenRouter Request")
+            print(f"{'='*60}")
+            print(f"Endpoint: https://openrouter.ai/api/v1/chat/completions")
+            print(f"Model: {model}")
+            print(f"Image size: {image_size_kb:.1f} KB")
+            print(f"Prompt length: {len(prompt)} chars")
+            print(f"Timeout: {self.timeout}s")
+            print(f"\nRequest payload:")
+            print(f"  model: {payload['model']}")
+            print(f"  messages[0].content: [{len(payload['messages'][0]['content'])} items]")
+            print(f"    text: {payload['messages'][0]['content'][0]['text'][:100]}..." if len(payload['messages'][0]['content'][0]['text']) > 100 else f"    text: {payload['messages'][0]['content'][0]['text']}")
+            print(f"    image_url: [base64 encoded, {len(image_b64)} chars]")
+            print(f"{'='*60}\n")
+
+        start_time = time.time()
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -59,9 +80,26 @@ class OpenRouterProvider(VisionProvider):
                     headers=headers,
                     json=payload,
                 )
+                elapsed = time.time() - start_time
+
+                if self.debug:
+                    print(f"\n{'='*60}")
+                    print(f"DEBUG MODE - OpenRouter Response")
+                    print(f"{'='*60}")
+                    print(f"Status: {response.status_code}")
+                    print(f"Response time: {elapsed:.2f}s")
+
                 response.raise_for_status()
                 result = response.json()
-                return result["choices"][0]["message"]["content"]
+                response_text = result["choices"][0]["message"]["content"]
+
+                if self.debug:
+                    print(f"Response length: {len(response_text)} chars")
+                    print(f"\nResponse content:")
+                    print(f"  {response_text[:200]}..." if len(response_text) > 200 else f"  {response_text}")
+                    print(f"{'='*60}\n")
+
+                return response_text
 
         except httpx.HTTPError as e:
             logger.error(f"OpenRouter API error: {e}")
