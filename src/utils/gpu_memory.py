@@ -23,6 +23,9 @@ class GPUResourceManager:
     LMSTUDIO_MODELS_ENDPOINT = "/api/v1/models"
     LMSTUDIO_UNLOAD_ENDPOINT = "/api/v1/models/unload"
 
+    _gpu_verified: bool = False
+    _last_verified_provider: str | None = None
+
     @staticmethod
     async def get_ollama_loaded_models(base_url: str = "http://localhost:11434") -> list[str]:
         """Get list of currently loaded models in Ollama.
@@ -162,6 +165,18 @@ class GPUResourceManager:
                 - unloaded: List of models that were unloaded
                 - warnings: List of warning messages (if any)
         """
+        if GPUResourceManager._gpu_verified and GPUResourceManager._last_verified_provider == provider:
+            other_provider = "lmstudio" if provider == "ollama" else "ollama"
+            return {
+                "status": "ok",
+                "current_provider_loaded": [],
+                "other_provider_models": [],
+                "other_provider": other_provider,
+                "same_model_loaded": False,
+                "unloaded": [],
+                "warnings": [],
+            }
+
         warnings = []
         unloaded = []
         same_model_loaded = False
@@ -237,6 +252,9 @@ class GPUResourceManager:
 
         for w in warnings:
             logger.warning(w)
+
+        GPUResourceManager._gpu_verified = True
+        GPUResourceManager._last_verified_provider = provider
 
         return {
             "status": status,
@@ -335,3 +353,13 @@ class GPUResourceManager:
         lines.append("=" * 50)
 
         return "\n".join(lines)
+
+    @staticmethod
+    def reset_gpu_verification() -> None:
+        """Reset the GPU verification flag.
+
+        Call this if the provider configuration changes mid-session
+        to force re-verification on the next tool call.
+        """
+        GPUResourceManager._gpu_verified = False
+        GPUResourceManager._last_verified_provider = None
