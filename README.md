@@ -167,11 +167,40 @@ Adicione no arquivo `~/.config/opencode/opencode.json`:
 }
 ```
 
-> Troque o provider alterando a parte `environment`:
-> - **OpenAI:** `"OMNI_VISION_PROVIDER": "openai"`, adicione `"OMNI_VISION_API_KEY": "sk-..."`
-> - **OpenRouter:** `"OMNI_VISION_PROVIDER": "openrouter"`, adicione `"OMNI_VISION_API_KEY": "sk-or-..."`
+#### Ollama (local, gratuito)
 
-> ⚠️ **Lembrete:** O `command` deve apontar para o `python.exe` dentro da pasta `venv` do projeto. Depois de alterar, **reinicie o opencode**.
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "ollama",
+  "OMNI_VISION_DEFAULT_MODEL": "qwen3-vl:2b"
+}
+```
+
+#### OpenAI (nuvem, pago)
+
+Requer [API key](https://platform.openai.com/api-keys).
+
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "openai",
+  "OMNI_VISION_API_KEY": "sk-proj-sua-chave-aqui",
+  "OMNI_VISION_DEFAULT_MODEL": "gpt-5.4-mini"
+}
+```
+
+#### OpenRouter (nuvem, barato)
+
+Requer [API key](https://openrouter.ai/keys).
+
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "openrouter",
+  "OMNI_VISION_API_KEY": "sk-or-v1-sua-chave-aqui",
+  "OMNI_VISION_DEFAULT_MODEL": "qwen/qwen3-vl-32b-instruct"
+}
+```
+
+> **Lembrete:** O `command` deve apontar para o `python.exe` da pasta `venv` do projeto. Depois de alterar, **reinicie o opencode**.
 
 Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](https://cursor.sh).
 
