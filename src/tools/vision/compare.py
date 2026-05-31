@@ -10,7 +10,7 @@ from ...utils.gpu_memory import GPUResourceManager
 
 def _is_local_provider(provider: ProviderType) -> bool:
     """Check if provider is local (has GPU memory limits)."""
-    return provider in ["ollama", "lmstudio"]
+    return provider == "ollama"
 
 
 async def compare_images(
@@ -74,7 +74,7 @@ async def _compare_sequential(
 ) -> str:
     """Compare images sequentially for local providers with GPU memory limits.
 
-    Local providers (Ollama, LM Studio) can only process 1 image at a time.
+    Local providers (Ollama) can only process 1 image at a time.
     This function analyzes each image separately, then compares the results.
     """
     descriptions = []

@@ -6,7 +6,6 @@ from .base import VisionProvider
 from .ollama import OllamaProvider
 from .openrouter import OpenRouterProvider
 from .openai import OpenAIProvider
-from .lmstudio import LMStudioProvider
 
 
 class ProviderFactory:
@@ -16,7 +15,6 @@ class ProviderFactory:
         "ollama": OllamaProvider,
         "openrouter": OpenRouterProvider,
         "openai": OpenAIProvider,
-        "lmstudio": LMStudioProvider,
     }
 
     @classmethod
@@ -25,7 +23,7 @@ class ProviderFactory:
         Get a provider instance by name.
 
         Args:
-            name: Provider name (ollama, openrouter, openai, lmstudio)
+            name: Provider name (ollama, openrouter, openai)
             config: Configuration object
             debug: Enable debug mode for request/response logging
 
@@ -59,5 +57,4 @@ __all__ = [
     "OllamaProvider",
     "OpenRouterProvider",
     "OpenAIProvider",
-    "LMStudioProvider",
 ]

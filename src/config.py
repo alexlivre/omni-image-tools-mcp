@@ -4,17 +4,13 @@ from pydantic import BaseModel, Field
 from .errors import ConfigError
 
 
-ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio"]
+ProviderType = Literal["ollama", "openrouter", "openai"]
 
 
 class OllamaConfig(BaseModel):
     base_url: str = Field(default="http://localhost:11434")
     allowed_models: list[str] = Field(default=["qwen3-vl:4b", "qwen3-vl:2b"])
     auto_pull: bool = Field(default=False)
-
-
-class LMStudioConfig(BaseModel):
-    base_url: str = Field(default="http://localhost:1234")
 
 
 class OpenRouterConfig(BaseModel):
@@ -34,7 +30,6 @@ class Config(BaseModel):
     timeout: int = Field(default=120)
 
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
-    lmstudio: LMStudioConfig = Field(default_factory=LMStudioConfig)
     openrouter: OpenRouterConfig | None = None
     openai: OpenAIConfig | None = None
 
@@ -47,9 +42,9 @@ class Config(BaseModel):
                 missing_key="OMNI_VISION_PROVIDER",
             )
 
-        if provider not in ["ollama", "openrouter", "openai", "lmstudio"]:
+        if provider not in ["ollama", "openrouter", "openai"]:
             raise ConfigError(
-                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai, lmstudio",
+                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai",
             )
 
         api_key = os.getenv("OMNI_VISION_API_KEY")
@@ -81,9 +76,6 @@ class Config(BaseModel):
                 allowed_models=ollama_allowed.split(","),
                 auto_pull=ollama_auto_pull,
             ),
-            lmstudio=LMStudioConfig(
-                base_url=os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234"),
-            ),
         )
 
         if provider == "openrouter":
@@ -94,7 +86,7 @@ class Config(BaseModel):
         elif provider == "openai":
             config.openai = OpenAIConfig(
                 api_key=api_key or "",
-                default_model=config.default_model or "gpt-4o",
+                default_model=config.default_model or "gpt-5.4-mini",
             )
 
         return config

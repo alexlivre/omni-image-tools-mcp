@@ -1,7 +1,7 @@
 """
 Omni-Image-Tools MCP Server
 MCP server for image vision and processing.
-Supports: Ollama, OpenRouter, OpenAI, LM Studio
+Supports: Ollama, OpenRouter, OpenAI
 """
 
 __version__ = "1.0.0"
