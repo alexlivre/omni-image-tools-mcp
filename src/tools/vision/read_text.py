@@ -37,10 +37,10 @@ async def read_text(
     if language_hint:
         prompt += f" (Hint: the text may be in {language_hint})"
 
-    gpu_status = await GPUResourceManager.ensure_single_provider(config.provider)
+    await GPUResourceManager.ensure_single_provider(config.provider)
     result = await provider.analyze(image_data, prompt)
 
-    response = {
+    return {
         "success": True,
         "result": result,
         "provider": config.provider,
@@ -49,12 +49,3 @@ async def read_text(
             "language_hint": language_hint,
         },
     }
-
-    if gpu_status["warnings"] or gpu_status["unloaded"]:
-        response["gpu_status"] = {
-            "status": gpu_status["status"],
-            "unloaded": gpu_status["unloaded"],
-            "warnings": gpu_status["warnings"],
-        }
-
-    return response

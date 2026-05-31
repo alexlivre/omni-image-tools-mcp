@@ -47,10 +47,10 @@ async def identify_objects(
 
     prompt = " ".join(prompt_parts)
 
-    gpu_status = await GPUResourceManager.ensure_single_provider(config.provider)
+    await GPUResourceManager.ensure_single_provider(config.provider)
     result = await provider.analyze(image_data, prompt)
 
-    response = {
+    return {
         "success": True,
         "result": result,
         "provider": config.provider,
@@ -61,12 +61,3 @@ async def identify_objects(
             "min_confidence": min_confidence,
         },
     }
-
-    if gpu_status["warnings"] or gpu_status["unloaded"]:
-        response["gpu_status"] = {
-            "status": gpu_status["status"],
-            "unloaded": gpu_status["unloaded"],
-            "warnings": gpu_status["warnings"],
-        }
-
-    return response

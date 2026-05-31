@@ -29,21 +29,12 @@ async def describe_image(
 
     prompt = get_vision_prompt("describe_image", description_type)
 
-    gpu_status = await GPUResourceManager.ensure_single_provider(config.provider)
+    await GPUResourceManager.ensure_single_provider(config.provider)
     result = await provider.analyze(image_data, prompt)
 
-    response = {
+    return {
         "success": True,
         "result": result,
         "provider": config.provider,
         "description_type": description_type,
     }
-
-    if gpu_status["warnings"] or gpu_status["unloaded"]:
-        response["gpu_status"] = {
-            "status": gpu_status["status"],
-            "unloaded": gpu_status["unloaded"],
-            "warnings": gpu_status["warnings"],
-        }
-
-    return response
