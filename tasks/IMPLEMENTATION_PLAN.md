@@ -304,7 +304,11 @@ python scripts/cli.py benchmark --image tests/fixtures/simple.jpg --providers al
 
 - [x] Fase 1: Setup + Base (2026-05-31)
 - [x] Fase 2: Foundation (2026-05-31)
-- [x] Fase 3: Ollama Provider (2026-05-31) - OpenRouter tested ✅
+- [x] Fase 3: Ollama Provider (2026-05-31) - ✅ FULL COMPLETE
+  - OllamaProvider implemented with allowlist check
+  - Tested with Ollama local (qwen3-vl:2b) - describe, analyze working
+  - OpenRouter also tested successfully
+  - --debug mode implemented
 - [ ] Fase 4: Vision MVP
 - [ ] Fase 5: Vision v2
 - [ ] Fase 6: Processing
