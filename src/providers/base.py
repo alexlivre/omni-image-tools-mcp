@@ -32,17 +32,15 @@ class VisionProvider(ABC):
     @abstractmethod
     async def compare(
         self,
-        image_data1: bytes,
-        image_data2: bytes,
+        image_datas: list[bytes],
         prompt: str,
         model: str | None = None,
     ) -> str:
         """
-        Compare two images with a custom prompt.
+        Compare multiple images with a custom prompt.
 
         Args:
-            image_data1: Raw bytes of first image
-            image_data2: Raw bytes of second image
+            image_datas: List of raw image bytes (2-10 images)
             prompt: The prompt/question about the comparison
             model: Optional model override
 

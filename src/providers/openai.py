@@ -108,16 +108,17 @@ class OpenAIProvider(VisionProvider):
 
     async def compare(
         self,
-        image_data1: bytes,
-        image_data2: bytes,
+        image_datas: list[bytes],
         prompt: str,
         model: str | None = None,
     ) -> str:
-        """Compare two images using OpenAI API."""
+        """Compare multiple images using OpenAI API."""
         model = model or self.default_model
 
-        image_b64_1 = base64.b64encode(image_data1).decode("utf-8")
-        image_b64_2 = base64.b64encode(image_data2).decode("utf-8")
+        image_contents = []
+        for img_data in image_datas:
+            image_b64 = base64.b64encode(img_data).decode("utf-8")
+            image_contents.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}})
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -131,8 +132,7 @@ class OpenAIProvider(VisionProvider):
                     "role": "user",
                     "content": [
                         {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_1}"}},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_2}"}},
+                        *image_contents,
                     ],
                 }
             ],

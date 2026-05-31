@@ -117,21 +117,19 @@ class OllamaProvider(VisionProvider):
 
     async def compare(
         self,
-        image_data1: bytes,
-        image_data2: bytes,
+        image_datas: list[bytes],
         prompt: str,
         model: str | None = None,
     ) -> str:
-        """Compare two images using Ollama API."""
+        """Compare multiple images using Ollama API."""
         model = self.validate_model(model)
 
-        image_b64_1 = base64.b64encode(image_data1).decode("utf-8")
-        image_b64_2 = base64.b64encode(image_data2).decode("utf-8")
+        images_b64 = [base64.b64encode(img).decode("utf-8") for img in image_datas]
 
         payload = {
             "model": model,
             "prompt": prompt,
-            "images": [image_b64_1, image_b64_2],
+            "images": images_b64,
             "stream": False,
         }
 

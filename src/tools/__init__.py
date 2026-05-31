@@ -114,26 +114,25 @@ TOOL_SCHEMAS = {
     },
     "compare_images": {
         "name": "compare_images",
-        "description": "Use when you need to compare two images and identify similarities or differences.",
+        "description": "Use when you need to compare multiple images (2-10) and identify similarities or differences between them. Pass a list of image paths to compare all images at once.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "image_path1": {
-                    "type": "string",
-                    "description": "Path to the first image",
-                },
-                "image_path2": {
-                    "type": "string",
-                    "description": "Path to the second image",
+                "image_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 2,
+                    "maxItems": 10,
+                    "description": "List of image paths to compare (2-10 images)",
                 },
                 "compare_type": {
                     "type": "string",
                     "enum": ["similarities", "differences", "both"],
                     "default": "both",
-                    "description": "What to compare",
+                    "description": "What to compare: similarities (what they have in common), differences (what sets them apart), or both",
                 },
             },
-            "required": ["image_path1", "image_path2"],
+            "required": ["image_paths"],
         },
     },
     "prepare_image": {
