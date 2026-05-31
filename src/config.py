@@ -1,7 +1,7 @@
 import os
 from typing import Literal
 from pydantic import BaseModel, Field
-from errors import ConfigError
+from .errors import ConfigError
 
 
 ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio"]
