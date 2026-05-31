@@ -9,7 +9,7 @@ from ..providers import ProviderFactory
 TOOL_SCHEMAS = {
     "analyze_image": {
         "name": "analyze_image",
-        "description": "Use when you need to analyze an image with a custom prompt to get detailed information about its contents.",
+        "description": "Use when you need to analyze an image with a custom prompt to get detailed information about its contents. IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -38,7 +38,7 @@ TOOL_SCHEMAS = {
     },
     "describe_image": {
         "name": "describe_image",
-        "description": "Use when you need to get a description of what an image contains.",
+        "description": "Use when you need to get a description of what an image contains. IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -58,7 +58,7 @@ TOOL_SCHEMAS = {
     },
     "identify_objects": {
         "name": "identify_objects",
-        "description": "Use when you need to identify and locate objects in an image.",
+        "description": "Use when you need to identify and locate objects in an image. IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -91,7 +91,7 @@ TOOL_SCHEMAS = {
     },
     "read_text": {
         "name": "read_text",
-        "description": "Use when you need to extract text from an image (OCR).",
+        "description": "Use when you need to extract text from an image (OCR). IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -114,7 +114,7 @@ TOOL_SCHEMAS = {
     },
     "compare_images": {
         "name": "compare_images",
-        "description": "Use when you need to compare multiple images (2-10) and identify similarities or differences between them. Pass a list of image paths to compare all images at once.",
+        "description": "Use when you need to compare multiple images (2-10) and identify similarities or differences between them. Pass a list of image paths to compare all images at once. IMPORTANT: For local providers (Ollama, LM Studio), this tool requires processing images sequentially and may be slower or less accurate. For online providers (OpenRouter, OpenAI), images are processed together for best results. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -243,6 +243,15 @@ TOOL_SCHEMAS = {
             "required": ["image_path", "output_format"],
         },
     },
+    "get_provider_info": {
+        "name": "get_provider_info",
+        "description": "Get information about the currently configured vision provider including its type (local/online), image processing limits, and capabilities. Use this to understand what the current provider supports before calling vision tools.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
 }
 
 
@@ -290,6 +299,7 @@ def register_all_tools() -> None:
         "get_image_info": importlib.import_module("src.tools.processing.info").get_image_info,
         "crop_image": importlib.import_module("src.tools.processing.crop").crop_image,
         "convert_image_format": importlib.import_module("src.tools.processing.convert").convert_image_format,
+        "get_provider_info": importlib.import_module("src.tools.system.provider_info").get_provider_info,
     }
 
     for tool_name, tool_schema in TOOL_SCHEMAS.items():
