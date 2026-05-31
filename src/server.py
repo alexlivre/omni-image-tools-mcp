@@ -21,6 +21,7 @@ from .config import Config, ConfigError
 from .providers import ProviderFactory
 from .tools import register_all_tools, TOOL_SCHEMAS
 from .utils import GPUResourceManager
+from .tools.system.provider_info import get_provider_info
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,12 +46,29 @@ class OmniImageToolsServer:
         @self.server.list_tools()
         async def handle_list_tools() -> List[types.Tool]:
             """List all available tools"""
+            try:
+                provider_info = get_provider_info()
+                provider_suffix = (
+                    f"\n\n⚡ Current provider: {provider_info.get('provider', '?')} "
+                    f"({provider_info.get('type', '?')})"
+                    f"\n📷 Image limit: {provider_info.get('image_limit_per_request', 'no limit') or 'no limit'} per request"
+                )
+                if provider_info.get('warnings', {}).get('local'):
+                    provider_suffix += f"\n{provider_info['warnings']['local']}"
+            except Exception:
+                provider_suffix = ""
+
             tools = []
             for tool_name, schema in TOOL_SCHEMAS.items():
                 input_schema = schema.get("inputSchema", {})
+                description = schema.get("description", "")
+
+                if tool_name not in ("get_provider_info",):
+                    description += provider_suffix
+
                 tools.append(types.Tool(
                     name=schema.get("name", tool_name),
-                    description=schema.get("description", ""),
+                    description=description,
                     inputSchema=input_schema
                 ))
             return tools
@@ -113,7 +131,7 @@ class OmniImageToolsServer:
                 write_stream,
                 InitializationOptions(
                     server_name="omni-image-tools-mcp",
-                    server_version="0.1.0",
+                    server_version="1.0.0",
                     capabilities=self.server.get_capabilities(
                         notification_options=NotificationOptions(),
                         experimental_capabilities={},
