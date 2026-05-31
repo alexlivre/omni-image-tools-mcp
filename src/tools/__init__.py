@@ -227,6 +227,20 @@ TOOL_SCHEMAS = {
             "required": [],
         },
     },
+    "download_image": {
+        "name": "download_image",
+        "description": "Download an image from a URL and save it locally. Use this when you need to analyze an image from the web. Returns the local path you can use with other vision tools.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "HTTP or HTTPS URL of the image to download",
+                },
+            },
+            "required": ["url"],
+        },
+    },
 }
 
 
@@ -275,6 +289,7 @@ def register_all_tools() -> None:
         "crop_image": importlib.import_module("src.tools.processing.crop").crop_image,
         "convert_image_format": importlib.import_module("src.tools.processing.convert").convert_image_format,
         "get_provider_info": importlib.import_module("src.tools.system.provider_info").get_provider_info,
+        "download_image": importlib.import_module("src.tools.processing.download").download_image,
     }
 
     for tool_name, tool_schema in TOOL_SCHEMAS.items():
