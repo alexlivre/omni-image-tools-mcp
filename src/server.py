@@ -62,8 +62,8 @@ class OmniImageToolsServer:
         ) -> Sequence[types.TextContent | types.ImageContent | types.EmbeddedResource]:
             """Handle tool execution"""
             try:
-                if not arguments:
-                    raise ValueError("No arguments provided")
+                if arguments is None:
+                    arguments = {}
 
                 image_path = arguments.get("image_path")
                 if image_path and not os.path.exists(image_path):
