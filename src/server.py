@@ -88,6 +88,11 @@ class OmniImageToolsServer:
                     else:
                         error_msg = result.get("error", "Unknown error")
                         text = f"Error: {error_msg}"
+
+                    gpu_warnings = result.get("gpu_warnings")
+                    if gpu_warnings:
+                        warnings_text = "\n\n⚠️ GPU WARNINGS:\n" + "\n".join(f"- {w}" for w in gpu_warnings)
+                        text += warnings_text
                 else:
                     text = str(result)
 

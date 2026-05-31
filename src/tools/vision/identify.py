@@ -5,6 +5,7 @@ from typing import Any
 from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
+from ...utils.gpu_memory import GPUResourceManager
 
 
 async def identify_objects(
@@ -48,7 +49,9 @@ async def identify_objects(
 
     result = await provider.analyze(image_data, prompt)
 
-    return {
+    gpu_status = await GPUResourceManager.check_for_provider(config.provider)
+
+    response = {
         "success": True,
         "result": result,
         "provider": config.provider,
@@ -59,3 +62,8 @@ async def identify_objects(
             "min_confidence": min_confidence,
         },
     }
+
+    if gpu_status["warnings"]:
+        response["gpu_warnings"] = gpu_status["warnings"]
+
+    return response

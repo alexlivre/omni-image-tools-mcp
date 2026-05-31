@@ -5,6 +5,7 @@ from typing import Any
 from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
+from ...utils.gpu_memory import GPUResourceManager
 
 
 async def compare_images(
@@ -41,12 +42,18 @@ async def compare_images(
 
     prompt = get_vision_prompt("compare_images", compare_type)
 
+    gpu_status = await GPUResourceManager.check_for_provider(config.provider)
     result = await provider.compare(image_datas, prompt, None)
 
-    return {
+    response = {
         "success": True,
         "result": result,
         "provider": config.provider,
         "compare_type": compare_type,
         "images_count": len(image_paths),
     }
+
+    if gpu_status["warnings"]:
+        response["gpu_warnings"] = gpu_status["warnings"]
+
+    return response

@@ -5,6 +5,7 @@ from typing import Any
 from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
+from ...utils.gpu_memory import GPUResourceManager
 
 
 async def analyze_image(
@@ -33,11 +34,17 @@ async def analyze_image(
     if prompt is None:
         prompt = get_vision_prompt("analyze_image", detail_level)
 
+    gpu_status = await GPUResourceManager.check_for_provider(config.provider, model)
     result = await provider.analyze(image_data, prompt, model)
 
-    return {
+    response = {
         "success": True,
         "result": result,
         "provider": config.provider,
         "model": model or config.default_model or "unknown",
     }
+
+    if gpu_status["warnings"]:
+        response["gpu_warnings"] = gpu_status["warnings"]
+
+    return response
