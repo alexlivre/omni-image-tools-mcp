@@ -1,5 +1,6 @@
 """Tool registry and schemas for omni-image-tools-mcp."""
 
+import importlib
 from typing import Any, Callable
 
 from ..providers import ProviderFactory
@@ -280,16 +281,25 @@ class ToolRegistry:
 
 def register_all_tools() -> None:
     """Register all tools from schemas."""
-    for tool_name, tool_schema in TOOL_SCHEMAS.items():
-        def create_placeholder(func_name: str):
-            def placeholder(**kwargs):
-                return {"error": f"Tool '{func_name}' not yet implemented"}
-            return placeholder
+    tool_functions = {
+        "analyze_image": importlib.import_module("src.tools.vision.analyze").analyze_image,
+        "describe_image": importlib.import_module("src.tools.vision.describe").describe_image,
+        "identify_objects": importlib.import_module("src.tools.vision.identify").identify_objects,
+        "read_text": importlib.import_module("src.tools.vision.read_text").read_text,
+    }
 
-        cls = ToolRegistry
-        cls.register(
+    for tool_name, tool_schema in TOOL_SCHEMAS.items():
+        func = tool_functions.get(tool_name)
+        if func is None:
+            def create_placeholder(name: str):
+                async def placeholder(**kwargs):
+                    return {"error": f"Tool '{name}' not yet implemented"}
+                return placeholder
+            func = create_placeholder(tool_name)
+
+        ToolRegistry.register(
             name=tool_name,
-            func=create_placeholder(tool_name),
+            func=func,
             schema=tool_schema,
         )
 

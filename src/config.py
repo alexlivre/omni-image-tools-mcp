@@ -24,7 +24,7 @@ class OpenRouterConfig(BaseModel):
 
 class OpenAIConfig(BaseModel):
     api_key: str
-    default_model: str = Field(default="gpt-4o")
+    default_model: str = Field(default="gpt-5.4-mini")
 
 
 class Config(BaseModel):
