@@ -1,115 +1,60 @@
 #!/usr/bin/env python3
 """
-Ollama Vision MCP Server
-A Model Context Protocol server providing computer vision capabilities using Ollama
+Omni-Image-Tools MCP Server
+MCP server providing image vision and processing tools.
+Supports: Ollama, OpenRouter, OpenAI, LM Studio
 """
 
 import asyncio
-import base64
-import json
-import logging
 import os
 import sys
-from typing import Any, Dict, List, Optional, Sequence
+import logging
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence
 
 import mcp.server.stdio
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
-from .ollama_client import OllamaClient
-from .image_handler import ImageHandler
-from .config import Config
+from .config import Config, ConfigError
+from .providers import ProviderFactory
+from .tools import register_all_tools, TOOL_SCHEMAS
+from .utils import GPUResourceManager
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-class OllamaVisionServer:
+
+class OmniImageToolsServer:
     def __init__(self):
-        self.server = Server("ollama-vision-mcp")
-        self.config = Config()
-        self.ollama_client = OllamaClient(self.config)
-        self.image_handler = ImageHandler()
-        
-        # Register handlers
-        self.setup_handlers()
-        
-    def setup_handlers(self):
+        self.server = Server("omni-image-tools-mcp")
+        self._config: Optional[Config] = None
+        self._setup_handlers()
+
+    @property
+    def config(self) -> Config:
+        if self._config is None:
+            self._config = Config.from_env()
+        return self._config
+
+    def _setup_handlers(self):
         @self.server.list_tools()
         async def handle_list_tools() -> List[types.Tool]:
             """List all available tools"""
-            return [
-                types.Tool(
-                    name="analyze_image",
-                    description="Analyze an image and provide detailed description with optional custom prompt",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "image_path": {
-                                "type": "string",
-                                "description": "Path to image file or URL"
-                            },
-                            "prompt": {
-                                "type": "string",
-                                "description": "Optional custom prompt for analysis"
-                            },
-                            "model": {
-                                "type": "string",
-                                "description": "Optional Ollama model to use"
-                            }
-                        },
-                        "required": ["image_path"]
-                    }
-                ),
-                types.Tool(
-                    name="describe_image",
-                    description="Get a comprehensive description of what's in the image",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "image_path": {
-                                "type": "string",
-                                "description": "Path to image file or URL"
-                            }
-                        },
-                        "required": ["image_path"]
-                    }
-                ),
-                types.Tool(
-                    name="identify_objects",
-                    description="List all identifiable objects in the image",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "image_path": {
-                                "type": "string",
-                                "description": "Path to image file or URL"
-                            }
-                        },
-                        "required": ["image_path"]
-                    }
-                ),
-                types.Tool(
-                    name="read_text",
-                    description="Extract visible text from the image",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "image_path": {
-                                "type": "string",
-                                "description": "Path to image file or URL"
-                            }
-                        },
-                        "required": ["image_path"]
-                    }
-                )
-            ]
-        
+            tools = []
+            for tool_name, schema in TOOL_SCHEMAS.items():
+                input_schema = schema.get("inputSchema", {})
+                tools.append(types.Tool(
+                    name=schema.get("name", tool_name),
+                    description=schema.get("description", ""),
+                    inputSchema=input_schema
+                ))
+            return tools
+
         @self.server.call_tool()
         async def handle_call_tool(
             name: str,
@@ -119,51 +64,55 @@ class OllamaVisionServer:
             try:
                 if not arguments:
                     raise ValueError("No arguments provided")
-                
+
                 image_path = arguments.get("image_path")
-                if not image_path:
-                    raise ValueError("image_path is required")
-                
-                # Process the image
-                image_data = await self.image_handler.process_image(image_path)
-                
-                # Call the appropriate tool
-                if name == "analyze_image":
-                    prompt = arguments.get("prompt", "Describe this image in detail")
-                    model = arguments.get("model", self.config.default_model)
-                    result = await self.ollama_client.analyze_image(image_data, prompt, model)
-                    
-                elif name == "describe_image":
-                    prompt = "Provide a comprehensive description of this image, including all visible elements, colors, composition, and any notable details"
-                    result = await self.ollama_client.analyze_image(image_data, prompt)
-                    
-                elif name == "identify_objects":
-                    prompt = "List all identifiable objects in this image. Format as a bulleted list"
-                    result = await self.ollama_client.analyze_image(image_data, prompt)
-                    
-                elif name == "read_text":
-                    prompt = "Extract and transcribe all visible text in this image. If no text is visible, say 'No text found'"
-                    result = await self.ollama_client.analyze_image(image_data, prompt)
-                    
-                else:
+                if image_path and not os.path.exists(image_path):
+                    raise ValueError(f"Image not found: {image_path}")
+
+                from .tools import ToolRegistry
+                tool = ToolRegistry.get_tool(name)
+
+                if not tool:
                     raise ValueError(f"Unknown tool: {name}")
-                
-                return [types.TextContent(type="text", text=result)]
-                
+
+                func = tool["func"]
+
+                if asyncio.iscoroutinefunction(func):
+                    result = await func(**arguments)
+                else:
+                    result = func(**arguments)
+
+                if isinstance(result, dict):
+                    if result.get("success"):
+                        text = result.get("result", str(result))
+                    else:
+                        text = f"Error: {result.get('error', 'Unknown error')}"
+                else:
+                    text = str(result)
+
+                return [types.TextContent(type="text", text=text)]
+
+            except ConfigError as e:
+                logger.error(f"Config error: {e}")
+                return [types.TextContent(type="text", text=f"Config error: {e.message}")]
             except Exception as e:
                 logger.error(f"Error executing tool {name}: {e}")
-                error_msg = f"Error: {str(e)}"
-                return [types.TextContent(type="text", text=error_msg)]
-    
+                return [types.TextContent(type="text", text=f"Error: {str(e)}")]
+
     async def run(self):
         """Run the MCP server"""
+        logger.info("Starting Omni-Image-Tools MCP Server...")
+        logger.info(f"Provider: {self.config.provider}")
+
+        await GPUResourceManager.check_memory_collision()
+
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await self.server.run(
                 read_stream,
                 write_stream,
                 InitializationOptions(
-                    server_name="ollama-vision-mcp",
-                    server_version="1.0.0",
+                    server_name="omni-image-tools-mcp",
+                    server_version="0.1.0",
                     capabilities=self.server.get_capabilities(
                         notification_options=NotificationOptions(),
                         experimental_capabilities={},
@@ -171,16 +120,22 @@ class OllamaVisionServer:
                 )
             )
 
+
 def main():
     """Main entry point"""
     try:
-        server = OllamaVisionServer()
+        register_all_tools()
+        server = OmniImageToolsServer()
         asyncio.run(server.run())
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
+    except ConfigError as e:
+        logger.error(f"Config error: {e.message}")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Server error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

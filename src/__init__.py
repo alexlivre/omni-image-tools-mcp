@@ -1,20 +1,21 @@
 """
-Ollama Vision MCP Server
-A Model Context Protocol server for computer vision using Ollama
+Omni-Image-Tools MCP Server
+MCP server for image vision and processing.
+Supports: Ollama, OpenRouter, OpenAI, LM Studio
 """
 
-__version__ = "1.0.0"
-__author__ = "Ollama Vision MCP Contributors"
+__version__ = "0.1.0"
 
-from .server import OllamaVisionServer, main
-from .ollama_client import OllamaClient
-from .image_handler import ImageHandler
+from .server import OmniImageToolsServer, main
 from .config import Config
+from .providers import ProviderFactory
+from .tools import register_all_tools, ToolRegistry
 
 __all__ = [
-    "OllamaVisionServer",
-    "OllamaClient", 
-    "ImageHandler",
+    "OmniImageToolsServer",
     "Config",
+    "ProviderFactory",
+    "ToolRegistry",
+    "register_all_tools",
     "main"
 ]
