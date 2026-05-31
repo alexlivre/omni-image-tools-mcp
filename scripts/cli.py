@@ -491,6 +491,10 @@ def main():
     convert_parser.add_argument("--quality", type=int, default=85, help="Quality (1-100)")
     convert_parser.add_argument("--output", help="Output file path")
 
+    benchmark_parser = subparsers.add_parser("benchmark", help="Benchmark all providers with the same image")
+    benchmark_parser.add_argument("--image", required=True, help="Path to image file")
+    benchmark_parser.add_argument("--providers", default="all", help="Providers to test (comma-separated or 'all')")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -557,7 +561,106 @@ def main():
     if args.command == "convert":
         return asyncio.run(convert_cmd(args))
 
+    if args.command == "benchmark":
+        return asyncio.run(benchmark_cmd(args))
+
     parser.print_help()
+    return 0
+
+
+async def benchmark_cmd(args):
+    """Benchmark all providers with the same image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.providers import ProviderFactory
+    from src.config import Config, ConfigError
+
+    import time
+
+    providers_to_test = []
+    if args.providers == "all":
+        providers_to_test = ["ollama", "openrouter", "openai", "lmstudio"]
+    else:
+        providers_to_test = [p.strip() for p in args.providers.split(",")]
+
+    print(f"\n{'='*60}")
+    print(f"BENCHMARK: Testing {len(providers_to_test)} providers")
+    print(f"Image: {args.image}")
+    print(f"{'='*60}\n")
+
+    results = []
+
+    for provider_name in providers_to_test:
+        print(f"\n--- Testing {provider_name.upper()} ---")
+
+        try:
+            saved_provider = os.environ.get("OMNI_VISION_PROVIDER")
+            saved_api_key = os.environ.get("OMNI_VISION_API_KEY")
+            saved_model = os.environ.get("OMNI_VISION_DEFAULT_MODEL")
+
+            os.environ["OMNI_VISION_PROVIDER"] = provider_name
+
+            if provider_name in ["openrouter", "openai"]:
+                if not os.environ.get("OMNI_VISION_API_KEY"):
+                    print(f"  [SKIP] No API key configured")
+                    continue
+
+            config = Config.from_env()
+            provider = ProviderFactory.get(provider_name, config, debug=False)
+
+            with open(args.image, "rb") as f:
+                image_data = f.read()
+
+            prompt = "Describe this image briefly."
+
+            start_time = time.time()
+            result = await provider.analyze(image_data, prompt)
+            elapsed = time.time() - start_time
+
+            results.append({
+                "provider": provider_name,
+                "model": config.default_model or "unknown",
+                "time": elapsed,
+                "success": True,
+                "result_preview": result[:200] + "..." if len(result) > 200 else result,
+            })
+
+            print(f"  Model: {config.default_model or 'unknown'}")
+            print(f"  Time: {elapsed:.2f}s")
+            print(f"  Result: {result[:100]}...")
+
+            os.environ["OMNI_VISION_PROVIDER"] = saved_provider or ""
+            os.environ["OMNI_VISION_API_KEY"] = saved_api_key or ""
+            os.environ["OMNI_VISION_DEFAULT_MODEL"] = saved_model or ""
+
+        except ConfigError as e:
+            print(f"  [SKIP] Config error: {e.message}")
+        except Exception as e:
+            print(f"  [ERROR] {e}")
+            results.append({
+                "provider": provider_name,
+                "model": "unknown",
+                "time": 0,
+                "success": False,
+                "error": str(e),
+            })
+
+    print(f"\n{'='*60}")
+    print("BENCHMARK SUMMARY")
+    print(f"{'='*60}")
+    print(f"{'Provider':<15} {'Model':<30} {'Time':<10}")
+    print("-" * 60)
+
+    for r in sorted(results, key=lambda x: x["time"] if x["success"] else 999):
+        if r["success"]:
+            print(f"{r['provider']:<15} {r['model']:<30} {r['time']:.2f}s")
+        else:
+            print(f"{r['provider']:<15} {'ERROR':<30} {r['error'][:30]}")
+
+    print(f"{'='*60}\n")
+
     return 0
 
 
