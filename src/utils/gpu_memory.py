@@ -136,18 +136,17 @@ class GPUResourceManager:
             return False
 
     @staticmethod
-    async def check_for_provider(
+    async def ensure_single_provider(
         provider: str,
         model: str | None = None,
         ollama_url: str = "http://localhost:11434",
         lmstudio_url: str = "http://localhost:1234"
     ) -> dict[str, Any]:
-        """Check loaded models in THIS and OTHER providers before loading a new one.
+        """Ensure only ONE provider has models loaded at a time.
 
-        Call this BEFORE making a vision request to avoid GPU memory overflow.
-        Checks:
-        1. If THIS provider already has a DIFFERENT model loaded (conflict)
-        2. If OTHER provider has any models loaded (collision)
+        This is the PRIMARY method to call BEFORE any vision operation.
+        It checks for models in BOTH providers and automatically unloads
+        models from the OTHER provider if there's a collision.
 
         Args:
             provider: Current provider name ("ollama" or "lmstudio")
@@ -157,52 +156,95 @@ class GPUResourceManager:
 
         Returns:
             Dict with:
-                - can_proceed: True if safe to load model
+                - status: "ok", "unloaded", or "same_model"
                 - current_provider_loaded: Models in current provider
-                - other_provider_models: Models in other provider
-                - same_model_loaded: True if same model already in current provider
-                - warnings: List of warning messages
+                - other_provider_models: Models that were (or would be) in other provider
+                - unloaded: List of models that were unloaded
+                - warnings: List of warning messages (if any)
         """
         warnings = []
+        unloaded = []
         same_model_loaded = False
 
         if provider == "ollama":
             other_provider = "lmstudio"
             current_models = await GPUResourceManager.get_ollama_loaded_models(ollama_url)
             other_models = await GPUResourceManager.get_lmstudio_loaded_models(lmstudio_url)
+            other_url = lmstudio_url
         else:
             other_provider = "ollama"
             current_models = await GPUResourceManager.get_lmstudio_loaded_models(lmstudio_url)
             other_models = await GPUResourceManager.get_ollama_loaded_models(ollama_url)
+            other_url = ollama_url
 
-        if current_models:
-            current_model_names = [m.get("display_name") or m.get("key") or m or "?" for m in current_models]
-            if model and model in current_model_names:
-                same_model_loaded = True
+        current_model_names = []
+        for m in current_models:
+            if isinstance(m, str):
+                current_model_names.append(m)
             else:
-                warnings.append(
-                    f"{provider.capitalize()} already has model(s) loaded: {', '.join(current_model_names)}. "
-                    f"Requesting model '{model}' will replace the current model."
-                )
+                current_model_names.append(m.get("display_name") or m.get("key") or m.get("name", "?"))
+
+        other_model_names = []
+        for m in other_models:
+            if isinstance(m, str):
+                other_model_names.append(m)
+            else:
+                other_model_names.append(m.get("display_name") or m.get("key") or m.get("name", "?"))
+
+        if model and model in current_model_names:
+            same_model_loaded = True
+
+        status = "same_model" if same_model_loaded else "ok"
 
         if other_models:
-            other_model_names = [m.get("display_name") or m.get("key") or m or "?" for m in other_models]
-            warnings.append(
-                f"GPU WARNING: {other_provider.capitalize()} has {len(other_models)} model(s) loaded: {', '.join(other_model_names)}. "
-                f"Loading in {provider} may cause GPU memory overflow on residential GPUs."
+            logger.info(
+                f"GPU CLEANUP: {other_provider.capitalize()} has {len(other_models)} model(s) loaded. "
+                f"Unloading to prevent GPU memory overflow."
             )
+            for m in other_models:
+                if isinstance(m, str):
+                    model_name = m
+                    instance_id = None
+                else:
+                    model_name = m.get("key") or m.get("name", "")
+                    instance_id = m.get("instance_id")
 
-        can_proceed = len(warnings) == 0 or same_model_loaded
+                if other_provider == "ollama":
+                    success = await GPUResourceManager.unload_ollama_model(model_name, other_url)
+                else:
+                    if instance_id:
+                        success = await GPUResourceManager.unload_lmstudio_model(instance_id, other_url)
+                    else:
+                        success = False
+
+                if success:
+                    unloaded.append(model_name)
+                    logger.info(f"Unloaded {model_name} from {other_provider}")
+                else:
+                    warnings.append(f"Failed to unload {model_name} from {other_provider}")
+
+            status = "unloaded"
+
+        if same_model_loaded:
+            warnings.append(
+                f"{provider.capitalize()} already has model '{model}' loaded. Reusing existing model."
+            )
+        elif current_models and not same_model_loaded:
+            warnings.append(
+                f"{provider.capitalize()} already has model(s) loaded: {', '.join(current_model_names)}. "
+                f"Requesting model '{model}' will replace the current model."
+            )
 
         for w in warnings:
             logger.warning(w)
 
         return {
-            "can_proceed": can_proceed,
+            "status": status,
             "current_provider_loaded": current_models,
             "other_provider_models": other_models,
             "other_provider": other_provider,
             "same_model_loaded": same_model_loaded,
+            "unloaded": unloaded,
             "warnings": warnings,
         }
 

@@ -42,7 +42,7 @@ async def compare_images(
 
     prompt = get_vision_prompt("compare_images", compare_type)
 
-    gpu_status = await GPUResourceManager.check_for_provider(config.provider)
+    gpu_status = await GPUResourceManager.ensure_single_provider(config.provider)
     result = await provider.compare(image_datas, prompt, None)
 
     response = {
@@ -53,7 +53,11 @@ async def compare_images(
         "images_count": len(image_paths),
     }
 
-    if gpu_status["warnings"]:
-        response["gpu_warnings"] = gpu_status["warnings"]
+    if gpu_status["warnings"] or gpu_status["unloaded"]:
+        response["gpu_status"] = {
+            "status": gpu_status["status"],
+            "unloaded": gpu_status["unloaded"],
+            "warnings": gpu_status["warnings"],
+        }
 
     return response

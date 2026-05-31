@@ -34,7 +34,7 @@ async def analyze_image(
     if prompt is None:
         prompt = get_vision_prompt("analyze_image", detail_level)
 
-    gpu_status = await GPUResourceManager.check_for_provider(config.provider, model)
+    gpu_status = await GPUResourceManager.ensure_single_provider(config.provider, model)
     result = await provider.analyze(image_data, prompt, model)
 
     response = {
@@ -44,7 +44,11 @@ async def analyze_image(
         "model": model or config.default_model or "unknown",
     }
 
-    if gpu_status["warnings"]:
-        response["gpu_warnings"] = gpu_status["warnings"]
+    if gpu_status["warnings"] or gpu_status["unloaded"]:
+        response["gpu_status"] = {
+            "status": gpu_status["status"],
+            "unloaded": gpu_status["unloaded"],
+            "warnings": gpu_status["warnings"],
+        }
 
     return response

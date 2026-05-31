@@ -7,7 +7,6 @@ import time
 from typing import Any
 
 from .base import VisionProvider
-from ..utils.gpu_memory import GPUResourceManager
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +41,6 @@ class OllamaProvider(VisionProvider):
     ) -> str:
         """Analyze image using Ollama API."""
         model = self.validate_model(model)
-
-        gpu_status = await GPUResourceManager.check_for_provider("ollama", model, self.base_url)
-        if gpu_status["warnings"]:
-            for warning in gpu_status["warnings"]:
-                logger.warning(f"GPU check: {warning}")
 
         is_valid, error_msg = self.validate_image(image_data)
         if not is_valid:
@@ -129,11 +123,6 @@ class OllamaProvider(VisionProvider):
     ) -> str:
         """Compare multiple images using Ollama API."""
         model = self.validate_model(model)
-
-        gpu_status = await GPUResourceManager.check_for_provider("ollama", model, self.base_url)
-        if gpu_status["warnings"]:
-            for warning in gpu_status["warnings"]:
-                logger.warning(f"GPU check: {warning}")
 
         images_b64 = [base64.b64encode(img).decode("utf-8") for img in image_datas]
 
