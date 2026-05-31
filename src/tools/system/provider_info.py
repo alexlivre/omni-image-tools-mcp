@@ -27,12 +27,18 @@ def get_provider_info() -> dict[str, Any]:
         "limits": {
             "local_providers": {
                 "image_limit_per_request": 1,
+                "compare_processing": "sequential (images analyzed one at a time, then compared)",
                 "reason": "GPU memory constraints on local hardware",
             },
             "online_providers": {
                 "image_limit_per_request": None,
+                "compare_processing": "parallel (all images processed together)",
                 "reason": "Cloud GPU has sufficient memory",
             },
+        },
+        "warnings": {
+            "local": "LOCAL PROVIDER: 1 image per request limit enforced. compare_images uses sequential processing (slower but reliable).",
+            "online": "ONLINE PROVIDER: No image limit. All images processed in parallel for best results.",
         },
     }
 
@@ -45,14 +51,14 @@ def get_provider_info() -> dict[str, Any]:
 def _get_provider_description(provider: str, is_local: bool) -> str:
     """Get human-readable provider description."""
     descriptions = {
-        "ollama": "Ollama local vision model (qwen3-vl series)",
-        "lmstudio": "LM Studio local vision model (OpenAI-compatible API)",
-        "openrouter": "OpenRouter cloud API (multiple vision models)",
-        "openai": "OpenAI cloud API (GPT-4 Vision)",
+        "ollama": "Ollama local vision model",
+        "lmstudio": "LM Studio local vision model",
+        "openrouter": "OpenRouter cloud API",
+        "openai": "OpenAI cloud API",
     }
     base = descriptions.get(provider, provider)
     if is_local:
-        base += " - LIMIT: 1 image per request due to local GPU memory"
+        base += " | LIMIT: 1 image/request (GPU memory) | compare: sequential"
     else:
-        base += " - No image limit (cloud GPU)"
+        base += " | No image limit | compare: parallel"
     return base
