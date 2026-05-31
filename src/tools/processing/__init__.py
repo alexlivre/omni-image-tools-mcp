@@ -4,7 +4,7 @@ from .prepare import prepare_image
 from .info import get_image_info
 from .crop import crop_image
 from .convert import convert_image_format
-from .download import download_image
+from .extract import extract_object
 
 __all__ = [
     "prepare_image",
@@ -12,4 +12,5 @@ __all__ = [
     "crop_image",
     "convert_image_format",
     "download_image",
+    "extract_object",
 ]

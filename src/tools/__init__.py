@@ -241,6 +241,28 @@ TOOL_SCHEMAS = {
             "required": ["url"],
         },
     },
+    "extract_object": {
+        "name": "extract_object",
+        "description": "Locate and crop a specific object from an image. Use this to extract objects like license plates, faces, logos, or any element described in text. Uses AI vision to find the object, then crops and saves the region automatically.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "image_path": {
+                    "type": "string",
+                    "description": "Path to the image file",
+                },
+                "object_description": {
+                    "type": "string",
+                    "description": "Description of the object to locate and extract (e.g., 'license plate', 'cat face', 'car logo')",
+                },
+                "output_filename": {
+                    "type": "string",
+                    "description": "Optional filename for the extracted image. If not provided, auto-generates one.",
+                },
+            },
+            "required": ["image_path", "object_description"],
+        },
+    },
 }
 
 
@@ -290,6 +312,7 @@ def register_all_tools() -> None:
         "convert_image_format": importlib.import_module("src.tools.processing.convert").convert_image_format,
         "get_provider_info": importlib.import_module("src.tools.system.provider_info").get_provider_info,
         "download_image": importlib.import_module("src.tools.processing.download").download_image,
+        "extract_object": importlib.import_module("src.tools.processing.extract").extract_object,
     }
 
     for tool_name, tool_schema in TOOL_SCHEMAS.items():
