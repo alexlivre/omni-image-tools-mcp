@@ -2,7 +2,226 @@
 """CLI for omni-image-tools-mcp."""
 
 import argparse
+import asyncio
+import json
+import os
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.providers import ProviderFactory
+from src.tools import ToolRegistry, register_all_tools, TOOL_SCHEMAS
+
+
+def list_providers():
+    """List available providers."""
+    providers = ProviderFactory.list_providers()
+    print("Available providers:")
+    for p in providers:
+        print(f"  {p}")
+    print()
+
+
+def list_tools():
+    """List available tools with schemas."""
+    print("Vision tools:")
+    vision_tools = ["analyze_image", "describe_image", "identify_objects", "read_text", "compare_images"]
+    for name in vision_tools:
+        schema = TOOL_SCHEMAS.get(name, {})
+        desc = schema.get("description", "No description")
+        print(f"  {name}")
+        print(f"    {desc}")
+        print()
+
+    print("Processing tools:")
+    processing_tools = ["prepare_image", "get_image_info", "crop_image", "convert_image_format"]
+    for name in processing_tools:
+        schema = TOOL_SCHEMAS.get(name, {})
+        desc = schema.get("description", "No description")
+        print(f"  {name}")
+        print(f"    {desc}")
+        print()
+
+
+def show_tool_schema(tool_name: str):
+    """Show detailed schema for a tool."""
+    schema = TOOL_SCHEMAS.get(tool_name)
+    if not schema:
+        print(f"Unknown tool: {tool_name}")
+        return
+
+    print(f"Tool: {schema['name']}")
+    print(f"Description: {schema['description']}")
+    print()
+    print("Input Schema:")
+    print(json.dumps(schema["inputSchema"], indent=2))
+
+
+async def analyze_image(args):
+    """Analyze an image using the configured provider."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.config import Config, ConfigError
+
+    try:
+        config = Config.from_env()
+    except ConfigError as e:
+        print(f"Config error: {e.message}")
+        return 1
+
+    provider = ProviderFactory.get(config.provider, config)
+
+    with open(args.image, "rb") as f:
+        image_data = f.read()
+
+    prompt = args.prompt
+    if args.detail_level:
+        from src.prompts import get_vision_prompt
+        prompt = get_vision_prompt("analyze_image", args.detail_level)
+
+    try:
+        result = await provider.analyze(image_data, prompt, args.model)
+        print("Result:")
+        print(result)
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+async def describe_image(args):
+    """Describe an image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.config import Config, ConfigError
+
+    try:
+        config = Config.from_env()
+    except ConfigError as e:
+        print(f"Config error: {e.message}")
+        return 1
+
+    provider = ProviderFactory.get(config.provider, config)
+
+    with open(args.image, "rb") as f:
+        image_data = f.read()
+
+    from src.prompts import get_vision_prompt
+    prompt = get_vision_prompt("describe_image", args.description_type)
+
+    try:
+        result = await provider.analyze(image_data, prompt)
+        print("Description:")
+        print(result)
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+async def identify_objects(args):
+    """Identify objects in an image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.config import Config, ConfigError
+
+    try:
+        config = Config.from_env()
+    except ConfigError as e:
+        print(f"Config error: {e.message}")
+        return 1
+
+    provider = ProviderFactory.get(config.provider, config)
+
+    with open(args.image, "rb") as f:
+        image_data = f.read()
+
+    prompt = "Identify all objects in this image. List each object you see."
+
+    try:
+        result = await provider.analyze(image_data, prompt)
+        print("Objects found:")
+        print(result)
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+async def read_text(args):
+    """Extract text from an image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.config import Config, ConfigError
+
+    try:
+        config = Config.from_env()
+    except ConfigError as e:
+        print(f"Config error: {e.message}")
+        return 1
+
+    provider = ProviderFactory.get(config.provider, config)
+
+    with open(args.image, "rb") as f:
+        image_data = f.read()
+
+    if args.preserve_formatting:
+        prompt = "Extract all text from this image, preserving the layout and formatting."
+    else:
+        prompt = "Extract all visible text from this image."
+
+    if args.language_hint:
+        prompt += f" (Hint: the text may be in {args.language_hint})"
+
+    try:
+        result = await provider.analyze(image_data, prompt)
+        print("Extracted text:")
+        print(result)
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+def get_image_info(args):
+    """Get image metadata."""
+    from PIL import Image
+    import exifread
+
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    img = Image.open(args.image)
+
+    print(f"Format: {img.format}")
+    print(f"Size: {img.width} x {img.height}")
+    print(f"Mode: {img.mode}")
+
+    if hasattr(img, "_getexif") and img._getexif():
+        exif = img._getexif()
+        if exif:
+            print("EXIF data available")
+
+    if args.include_exif:
+        with open(args.image, "rb") as f:
+            tags = exifread.process_file(f)
+            if tags:
+                print()
+                print("EXIF Tags:")
+                for tag, value in list(tags.items())[:10]:
+                    print(f"  {tag}: {value}")
+
+    return 0
 
 
 def main():
@@ -18,22 +237,20 @@ def main():
 
     tools_parser = subparsers.add_parser("tools", help="List tools")
     tools_parser.add_argument("action", nargs="?", choices=["list"], default="list")
+    tools_parser.add_argument("--schema", metavar="TOOL", help="Show schema for a specific tool")
 
     analyze_parser = subparsers.add_parser("analyze", help="Analyze an image")
     analyze_parser.add_argument("--image", required=True, help="Path to image file")
-    analyze_parser.add_argument("--provider", default="ollama", help="Provider to use")
+    analyze_parser.add_argument("--prompt", default="Describe this image in detail", help="Analysis prompt")
     analyze_parser.add_argument("--model", help="Model to use")
-    analyze_parser.add_argument("--prompt", default="Describe this image", help="Analysis prompt")
-    analyze_parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    analyze_parser.add_argument("--detail-level", choices=["brief", "standard", "detailed"], help="Detail level")
 
     describe_parser = subparsers.add_parser("describe", help="Describe an image")
     describe_parser.add_argument("--image", required=True, help="Path to image file")
     describe_parser.add_argument("--type", choices=["simple", "detailed", "verbose"], default="detailed")
-    describe_parser.add_argument("--provider", default="ollama", help="Provider to use")
 
     identify_parser = subparsers.add_parser("identify", help="Identify objects in an image")
     identify_parser.add_argument("--image", required=True, help="Path to image file")
-    identify_parser.add_argument("--provider", default="ollama", help="Provider to use")
     identify_parser.add_argument("--include-count", action="store_true", help="Include object counts")
     identify_parser.add_argument("--include-location", action="store_true", help="Include object locations")
     identify_parser.add_argument("--categories", help="Filter by categories (comma-separated)")
@@ -42,74 +259,46 @@ def main():
     readtext_parser.add_argument("--image", required=True, help="Path to image file")
     readtext_parser.add_argument("--preserve-formatting", action="store_true", help="Preserve text formatting")
     readtext_parser.add_argument("--language-hint", help="Language hint (e.g., en, pt)")
-    readtext_parser.add_argument("--provider", default="ollama", help="Provider to use")
 
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")
+    info_parser.add_argument("--include-exif", action="store_true", default=True, help="Include EXIF metadata")
 
     args = parser.parse_args()
 
     if args.command is None:
         parser.print_help()
-        return
+        return 0
 
     if args.command == "providers":
-        print("Available providers:")
-        print("  ollama      - Local Ollama server (default)")
-        print("  openrouter  - OpenRouter API")
-        print("  openai      - OpenAI API")
-        print("  lmstudio    - LM Studio local server")
-        return
+        list_providers()
+        return 0
 
     if args.command == "tools":
-        print("Vision tools:")
-        print("  analyze_image   - Analyze image with custom prompt")
-        print("  describe_image  - Get image description")
-        print("  identify_objects - Identify objects in image")
-        print("  read_text       - Extract text from image")
-        print()
-        print("Processing tools:")
-        print("  prepare_image    - Prepare image for analysis")
-        print("  get_image_info   - Get image metadata")
-        print("  crop_image       - Crop image to region")
-        print("  convert_image_format - Convert image format")
-        return
+        if args.schema:
+            show_tool_schema(args.schema)
+        else:
+            list_tools()
+        return 0
 
     if args.command == "analyze":
-        print(f"Analyze: {args.image}")
-        print(f"Provider: {args.provider}")
-        print(f"Model: {args.model or 'default'}")
-        print(f"Prompt: {args.prompt}")
-        print("(Not yet implemented - Phase 3+)")
-        return
+        return asyncio.run(analyze_image(args))
 
     if args.command == "describe":
-        print(f"Describe: {args.image}")
-        print(f"Type: {args.type}")
-        print(f"Provider: {args.provider}")
-        print("(Not yet implemented - Phase 4)")
-        return
+        return asyncio.run(describe_image(args))
 
     if args.command == "identify":
-        print(f"Identify objects: {args.image}")
-        print(f"Provider: {args.provider}")
-        print(f"Include count: {args.include_count}")
-        print(f"Include location: {args.include_location}")
-        print("(Not yet implemented - Phase 4)")
-        return
+        return asyncio.run(identify_objects(args))
 
     if args.command == "read-text":
-        print(f"Read text: {args.image}")
-        print(f"Preserve formatting: {args.preserve_formatting}")
-        print(f"Language hint: {args.language_hint}")
-        print("(Not yet implemented - Phase 4)")
-        return
+        return asyncio.run(read_text(args))
 
     if args.command == "info":
-        print(f"Image info: {args.image}")
-        print("(Not yet implemented - Phase 6)")
-        return
+        return get_image_info(args)
+
+    parser.print_help()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

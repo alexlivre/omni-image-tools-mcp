@@ -1,0 +1,32 @@
+# Processing tool prompts for omni-image-tools-mcp
+# Note: Processing tools don't use AI prompts, but may use these for reference
+
+prepare_image:
+  purpose: "Prepare an image for analysis by resizing and optimizing it."
+  guidelines:
+    - "Resize to max dimensions while preserving aspect ratio"
+    - "Use appropriate format for content type (JPEG for photos, PNG for graphics)"
+    - "Quality 85 is good balance between size and clarity"
+
+get_image_info:
+  purpose: "Extract metadata from an image file."
+  info_types:
+    - "Basic: format, dimensions (width x height), color mode, file size"
+    - "EXIF: camera info, GPS, date/time, exposure settings"
+    - "ICC: color profile information"
+
+crop_image:
+  purpose: "Extract a region from an image."
+  guidelines:
+    - "Specify coordinates as x,y (top-left corner) plus width and height"
+    - "All values in pixels"
+    - "Coordinates must be within image bounds"
+
+convert_image_format:
+  purpose: "Convert an image to a different format."
+  format_notes:
+    JPEG: "Best for photos, lossy compression, supports EXIF"
+    PNG: "Best for graphics/screenshots, lossless, transparency support"
+    WEBP: "Modern format, good compression, transparency"
+    BMP: "Uncompressed, large file size"
+    GIF: "256 colors max, animation support"

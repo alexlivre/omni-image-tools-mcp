@@ -1,0 +1,27 @@
+# Vision tool prompts for omni-image-tools-mcp
+
+analyze_image:
+  default: "Analyze this image and provide a detailed description of its contents. Include information about objects, colors, scene composition, and any notable features."
+  brief: "Give a brief description of what's in this image."
+  standard: "Provide a comprehensive description of this image including main elements, colors, and context."
+  detailed: "Give an extremely detailed analysis of this image, describing every notable aspect, object, color, texture, and context."
+
+describe_image:
+  simple: "What is shown in this image? Give a simple, concise answer."
+  detailed: "Describe in detail what you see in this image, including all objects, their appearance, and the overall scene."
+  verbose: "Provide an exhaustive description of this image, covering every visible element, color, texture, spatial relationship, and contextual information."
+
+identify_objects:
+  default: "Identify all objects in this image. For each object provide: name, approximate size relative to the image, and location (top-left, center, bottom-right, etc.)."
+  with_count: "List all distinct objects in this image with counts. Format: [count] x [object name] - [location]"
+  with_categories: "Identify objects by category (person, animal, vehicle, furniture, etc.) and provide details."
+
+read_text:
+  default: "Extract all visible text from this image. Preserve the order as it appears."
+  with_formatting: "Extract all text from this image, preserving layout, paragraphs, and any formatting clues."
+  structured: "Extract text and structure it: headers, paragraphs, lists, tables if present."
+
+compare_images:
+  similarities: "Compare these two images and list their similarities."
+  differences: "Compare these two images and describe their differences."
+  both: "Compare these two images. First list similarities, then describe differences."
