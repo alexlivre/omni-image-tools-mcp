@@ -12,6 +12,55 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.providers import ProviderFactory
 from src.tools import ToolRegistry, register_all_tools, TOOL_SCHEMAS
+from src.utils import GPUResourceManager
+
+
+async def check_gpu_status():
+    """Check and display GPU model status for both Ollama and LM Studio."""
+    print("\n" + "=" * 50)
+    print("CHECKING GPU MODEL STATUS (DUAL PROVIDER VERIFICATION)")
+    print("=" * 50)
+
+    status = await GPUResourceManager.check_memory_collision()
+
+    print(f"\nOllama loaded: {len(status['ollama_models'])} model(s)")
+    for m in status['ollama_models']:
+        print(f"  - {m}")
+
+    print(f"\nLM Studio loaded: {len(status['lmstudio_models'])} model(s)")
+    for m in status['lmstudio_models']:
+        print(f"  - {m.get('display_name', m.get('key'))} (id: {m.get('instance_id')})")
+
+    print(f"\nTotal: {status['total_count']} model(s)")
+
+    if status['collision_detected']:
+        print("\n[!] COLLISION WARNING: Models loaded in BOTH providers!")
+        print("   This may exceed GPU memory on residential GPUs.")
+        print("   Consider unloading one provider.")
+    elif status['total_count'] > 0:
+        print("\n[OK] GPU memory check passed")
+    else:
+        print("\n[OK] No models loaded")
+
+    print("=" * 50 + "\n")
+    return status
+
+
+async def verify_gpu_before_vision():
+    """Verify GPU status before vision operations. Shows warning if collision detected."""
+    status = await GPUResourceManager.check_memory_collision()
+
+    if status['collision_detected']:
+        print("\n[!] GPU MEMORY WARNING [!]")
+        print(f"   Ollama: {status['ollama_models']}")
+        print(f"   LM Studio: {[m.get('key') for m in status['lmstudio_models']]}")
+        print("   Multiple models loaded - may cause OOM on residential GPUs\n")
+    elif status['total_count'] > 0:
+        provider = os.environ.get("OMNI_VISION_PROVIDER", "unknown")
+        models = status['ollama_models'] if provider == "ollama" else [m.get('key') for m in status['lmstudio_models']]
+        print(f"\n[INFO] Using {provider}: {models}\n")
+
+    return status
 
 
 def list_providers():
@@ -64,6 +113,8 @@ async def analyze_image(args):
         print(f"Error: Image not found: {args.image}")
         return 1
 
+    await verify_gpu_before_vision()
+
     from src.config import Config, ConfigError
 
     try:
@@ -99,6 +150,8 @@ async def describe_image(args):
         print(f"Error: Image not found: {args.image}")
         return 1
 
+    await verify_gpu_before_vision()
+
     from src.config import Config, ConfigError
 
     try:
@@ -132,6 +185,8 @@ async def identify_objects(args):
         print(f"Error: Image not found: {args.image}")
         return 1
 
+    await verify_gpu_before_vision()
+
     from src.config import Config, ConfigError
 
     try:
@@ -163,6 +218,8 @@ async def read_text(args):
     if not os.path.exists(args.image):
         print(f"Error: Image not found: {args.image}")
         return 1
+
+    await verify_gpu_before_vision()
 
     from src.config import Config, ConfigError
 
@@ -239,6 +296,10 @@ def main():
     providers_parser = subparsers.add_parser("providers", help="List providers")
     providers_parser.add_argument("action", nargs="?", choices=["list"], default="list")
 
+    gpu_parser = subparsers.add_parser("gpu-status", help="Check GPU memory status (Ollama + LM Studio)")
+    gpu_parser.add_argument("--unload-ollama", metavar="MODEL", help="Unload a specific model from Ollama")
+    gpu_parser.add_argument("--unload-lmstudio", metavar="INSTANCE_ID", help="Unload a specific model from LM Studio")
+
     tools_parser = subparsers.add_parser("tools", help="List tools")
     tools_parser.add_argument("action", nargs="?", choices=["list"], default="list")
     tools_parser.add_argument("--schema", metavar="TOOL", help="Show schema for a specific tool")
@@ -280,6 +341,28 @@ def main():
 
     if args.command == "providers":
         list_providers()
+        return 0
+
+    if args.command == "gpu-status":
+        if args.unload_ollama:
+            print(f"Unloading Ollama model: {args.unload_ollama}")
+            success = asyncio.run(GPUResourceManager.unload_ollama_model(args.unload_ollama))
+            if success:
+                print("[OK] Model unloaded")
+            else:
+                print("[FAIL] Failed to unload model")
+            return 0 if success else 1
+
+        if args.unload_lmstudio:
+            print(f"Unloading LM Studio model: {args.unload_lmstudio}")
+            success = asyncio.run(GPUResourceManager.unload_lmstudio_model(args.unload_lmstudio))
+            if success:
+                print("[OK] Model unloaded")
+            else:
+                print("[FAIL] Failed to unload model")
+            return 0 if success else 1
+
+        asyncio.run(check_gpu_status())
         return 0
 
     if args.command == "tools":
