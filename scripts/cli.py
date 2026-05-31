@@ -317,6 +317,104 @@ def get_image_info(args):
     return 0
 
 
+async def prepare_cmd(args):
+    """Prepare/resize an image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.tools.processing.prepare import prepare_image
+
+    try:
+        result = await prepare_image(
+            args.image,
+            max_width=args.max_width,
+            max_height=args.max_height,
+            format=args.format,
+            quality=args.quality,
+        )
+        if result["success"]:
+            print(f"Original size: {result['original_size']}")
+            print(f"New size: {result['new_size']}")
+            print(f"Format: {result['format']}")
+            print(f"Output size: {result['output_size_bytes']} bytes")
+            if args.output:
+                with open(args.output, "wb") as f:
+                    f.write(result["output_data"])
+                print(f"Saved to: {args.output}")
+        else:
+            print(f"Error: {result.get('error', 'Unknown error')}")
+            return 1
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+async def crop_cmd(args):
+    """Crop a region from an image."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.tools.processing.crop import crop_image
+
+    try:
+        result = await crop_image(
+            args.image,
+            x=args.x,
+            y=args.y,
+            width=args.width,
+            height=args.height,
+        )
+        if result["success"]:
+            print(f"Original size: {result['original_size']}")
+            print(f"Crop region: {result['crop_region']}")
+            print(f"Cropped size: {result['cropped_size']}")
+            if args.output:
+                with open(args.output, "wb") as f:
+                    f.write(result["output_data"])
+                print(f"Saved to: {args.output}")
+        else:
+            print(f"Error: {result.get('error', 'Unknown error')}")
+            return 1
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
+async def convert_cmd(args):
+    """Convert image format."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    from src.tools.processing.convert import convert_image_format
+
+    try:
+        result = await convert_image_format(
+            args.image,
+            output_format=args.format,
+            quality=args.quality,
+        )
+        if result["success"]:
+            print(f"Original format: {result['original_format']}")
+            print(f"New format: {result['new_format']}")
+            print(f"Output size: {result['output_size_bytes']} bytes")
+            if args.output:
+                with open(args.output, "wb") as f:
+                    f.write(result["output_data"])
+                print(f"Saved to: {args.output}")
+        else:
+            print(f"Error: {result.get('error', 'Unknown error')}")
+            return 1
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="omni-image-tools",
@@ -370,6 +468,28 @@ def main():
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")
     info_parser.add_argument("--include-exif", action="store_true", default=True, help="Include EXIF metadata")
+
+    prepare_parser = subparsers.add_parser("prepare", help="Prepare/resize an image")
+    prepare_parser.add_argument("--image", required=True, help="Path to image file")
+    prepare_parser.add_argument("--max-width", type=int, default=1024, help="Maximum width")
+    prepare_parser.add_argument("--max-height", type=int, default=1024, help="Maximum height")
+    prepare_parser.add_argument("--format", choices=["JPEG", "PNG", "WEBP"], default="JPEG", help="Output format")
+    prepare_parser.add_argument("--quality", type=int, default=85, help="Quality (1-100)")
+    prepare_parser.add_argument("--output", help="Output file path")
+
+    crop_parser = subparsers.add_parser("crop", help="Crop a region from an image")
+    crop_parser.add_argument("--image", required=True, help="Path to image file")
+    crop_parser.add_argument("--x", type=int, required=True, help="X coordinate")
+    crop_parser.add_argument("--y", type=int, required=True, help="Y coordinate")
+    crop_parser.add_argument("--width", type=int, required=True, help="Width")
+    crop_parser.add_argument("--height", type=int, required=True, help="Height")
+    crop_parser.add_argument("--output", help="Output file path")
+
+    convert_parser = subparsers.add_parser("convert", help="Convert image format")
+    convert_parser.add_argument("--image", required=True, help="Path to image file")
+    convert_parser.add_argument("--format", choices=["JPEG", "PNG", "WEBP", "BMP", "GIF"], required=True, help="Target format")
+    convert_parser.add_argument("--quality", type=int, default=85, help="Quality (1-100)")
+    convert_parser.add_argument("--output", help="Output file path")
 
     args = parser.parse_args()
 
@@ -427,6 +547,15 @@ def main():
 
     if args.command == "info":
         return get_image_info(args)
+
+    if args.command == "prepare":
+        return asyncio.run(prepare_cmd(args))
+
+    if args.command == "crop":
+        return asyncio.run(crop_cmd(args))
+
+    if args.command == "convert":
+        return asyncio.run(convert_cmd(args))
 
     parser.print_help()
     return 0
