@@ -86,7 +86,8 @@ class OmniImageToolsServer:
                     if result.get("success"):
                         text = result.get("result", str(result))
                     else:
-                        text = f"Error: {result.get('error', 'Unknown error')}"
+                        error_msg = result.get("error", "Unknown error")
+                        text = f"Error: {error_msg}"
                 else:
                     text = str(result)
 

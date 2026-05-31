@@ -136,6 +136,57 @@ class GPUResourceManager:
             return False
 
     @staticmethod
+    async def check_for_provider(
+        provider: str,
+        ollama_url: str = "http://localhost:11434",
+        lmstudio_url: str = "http://localhost:1234"
+    ) -> dict[str, Any]:
+        """Check loaded models in OTHER providers before loading a new one.
+
+        Call this BEFORE making a vision request to avoid GPU memory overflow.
+        If the OTHER provider (not the current one) has models loaded,
+        returns collision info.
+
+        Args:
+            provider: Current provider name ("ollama" or "lmstudio")
+            ollama_url: Ollama server URL
+            lmstudio_url: LM Studio server URL
+
+        Returns:
+            Dict with:
+                - can_proceed: True if safe to load model
+                - other_provider_models: Models in the other provider
+                - other_provider: Name of the other provider
+                - warning: Warning message if collision detected
+        """
+        if provider == "ollama":
+            other_provider = "lmstudio"
+            other_models = await GPUResourceManager.get_lmstudio_loaded_models(lmstudio_url)
+        else:
+            other_provider = "ollama"
+            other_models = await GPUResourceManager.get_ollama_loaded_models(ollama_url)
+
+        can_proceed = len(other_models) == 0
+        warning = None
+
+        if other_models:
+            model_names = [m.get("display_name") or m.get("key") or m.get("name", "?") for m in other_models]
+            if isinstance(other_models[0], str):
+                model_names = other_models
+            warning = (
+                f"GPU WARNING: {other_provider.capitalize()} has {len(other_models)} model(s) loaded: {', '.join(model_names)}. "
+                f"Loading in {provider} may cause GPU memory overflow on residential GPUs."
+            )
+            logger.warning(warning)
+
+        return {
+            "can_proceed": can_proceed,
+            "other_provider_models": other_models,
+            "other_provider": other_provider,
+            "warning": warning,
+        }
+
+    @staticmethod
     async def check_memory_collision(
         ollama_url: str = "http://localhost:11434",
         lmstudio_url: str = "http://localhost:1234"

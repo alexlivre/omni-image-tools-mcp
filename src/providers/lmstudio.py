@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from .base import VisionProvider
+from ..utils.gpu_memory import GPUResourceManager
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,14 @@ class LMStudioProvider(VisionProvider):
     ) -> str:
         """Analyze image using LM Studio API (OpenAI-compatible)."""
         model = model or "qwen/qwen3-vl-4b"
+
+        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", lmstudio_url=self.base_url)
+        if not gpu_status["can_proceed"]:
+            logger.warning(
+                f"GPU memory warning before LM Studio request: "
+                f"{gpu_status['other_provider']} has models loaded. "
+                f"Proceeding anyway but may cause memory issues."
+            )
 
         is_valid, error_msg = self.validate_image(image_data)
         if not is_valid:
@@ -117,6 +126,14 @@ class LMStudioProvider(VisionProvider):
     ) -> str:
         """Compare multiple images using LM Studio API."""
         model = model or "qwen/qwen3-vl-4b"
+
+        gpu_status = await GPUResourceManager.check_for_provider("lmstudio", lmstudio_url=self.base_url)
+        if not gpu_status["can_proceed"]:
+            logger.warning(
+                f"GPU memory warning before LM Studio compare: "
+                f"{gpu_status['other_provider']} has models loaded. "
+                f"Proceeding anyway but may cause memory issues."
+            )
 
         image_contents = []
         for img_data in image_datas:
