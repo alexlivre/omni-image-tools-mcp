@@ -192,13 +192,15 @@ OCR para extrair texto de imagens.
 
 ### Opencode
 
+Arquivo de configuração: `~/.config/opencode/opencode.json`
+
 ```json
 {
   "mcp": {
     "omni-image-tools": {
       "type": "local",
-      "command": ["caminho/para/venv/Scripts/python.exe", "-m", "src.server"],
-      "cwd": "caminho/para/omni-image-tools-mcp",
+      "command": ["C:\\caminho\\para\\venv\\Scripts\\python.exe", "-m", "src.server"],
+      "cwd": "C:\\caminho\\para\\omni-image-tools-mcp",
       "environment": {
         "OMNI_VISION_PROVIDER": "ollama",
         "OMNI_VISION_DEFAULT_MODEL": "qwen3-vl:2b"
@@ -209,14 +211,47 @@ OCR para extrair texto de imagens.
 }
 ```
 
+**Opções de `environment`:**
+
+| Chave | Obrigatório | Exemplo |
+|-------|-------------|---------|
+| `OMNI_VISION_PROVIDER` | Sim | `ollama`, `openrouter`, `openai` |
+| `OMNI_VISION_API_KEY` | Cloud* | `sk-or-v1-...` |
+| `OMNI_VISION_DEFAULT_MODEL` | Não | `qwen3-vl:2b` |
+| `OMNI_VISION_TIMEOUT` | Não | `120` |
+
+**Exemplo com OpenAI (cloud):**
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "openai",
+  "OMNI_VISION_API_KEY": "sk-proj-...",
+  "OMNI_VISION_DEFAULT_MODEL": "gpt-5.4-mini"
+}
+```
+
+**Exemplo com OpenRouter (cloud):**
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "openrouter",
+  "OMNI_VISION_API_KEY": "sk-or-v1-...",
+  "OMNI_VISION_DEFAULT_MODEL": "qwen/qwen3-vl-32b-instruct"
+}
+```
+
+> **Nota:** O `command` deve apontar para o `python.exe` do virtualenv do projeto.
+> Após alterar o config, **reinicie o opencode** para carregar.
+
 ### Claude Desktop
+
+Arquivo: `claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "omni-image-tools": {
-      "command": "python",
+      "command": "C:\\caminho\\para\\venv\\Scripts\\python.exe",
       "args": ["-m", "src.server"],
+      "cwd": "C:\\caminho\\para\\omni-image-tools-mcp",
       "env": {
         "OMNI_VISION_PROVIDER": "openrouter",
         "OMNI_VISION_API_KEY": "sk-or-..."
@@ -224,6 +259,41 @@ OCR para extrair texto de imagens.
     }
   }
 }
+```
+
+### Cursor IDE
+
+Arquivo: `.cursor/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "omni-image-tools": {
+      "command": "python",
+      "args": ["-m", "src.server"],
+      "cwd": "C:\\caminho\\para\\omni-image-tools-mcp"
+    }
+  }
+}
+```
+
+### CLI (terminal)
+
+```bash
+# Ativar venv e rodar comando direto
+.\venv\Scripts\activate
+
+# Analisar imagem
+python scripts\cli.py analyze --image test_images\foto.jpg --prompt "Descreva"
+
+# Extrair objeto
+python scripts\cli.py extract --image test_images\carro.jpg --object "license plate"
+
+# Listar tools disponíveis
+python scripts\cli.py tools list
+
+# Ver status da GPU
+python scripts\cli.py gpu-status
 ```
 
 ## GPU Memory Management
