@@ -30,6 +30,27 @@ class VisionProvider(ABC):
         """
 
     @abstractmethod
+    async def compare(
+        self,
+        image_data1: bytes,
+        image_data2: bytes,
+        prompt: str,
+        model: str | None = None,
+    ) -> str:
+        """
+        Compare two images with a custom prompt.
+
+        Args:
+            image_data1: Raw bytes of first image
+            image_data2: Raw bytes of second image
+            prompt: The prompt/question about the comparison
+            model: Optional model override
+
+        Returns:
+            Text response from the vision model
+        """
+
+    @abstractmethod
     async def health_check(self) -> bool:
         """Check if the provider is accessible and working."""
 

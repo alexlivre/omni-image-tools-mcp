@@ -33,16 +33,7 @@ async def compare_images(
 
     prompt = get_vision_prompt("compare_images", compare_type)
 
-    image_b64_1 = _encode_image(image_data1)
-    image_b64_2 = _encode_image(image_data2)
-
-    combined_prompt = f"""Image 1 (base64): {image_b64_1}
-
-Image 2 (base64): {image_b64_2}
-
-{prompt}"""
-
-    result = await provider.analyze(image_data1, prompt, None)
+    result = await provider.compare(image_data1, image_data2, prompt, None)
 
     return {
         "success": True,
@@ -50,9 +41,3 @@ Image 2 (base64): {image_b64_2}
         "provider": config.provider,
         "compare_type": compare_type,
     }
-
-
-def _encode_image(image_data: bytes) -> str:
-    """Encode image as base64 string."""
-    import base64
-    return base64.b64encode(image_data).decode("utf-8")

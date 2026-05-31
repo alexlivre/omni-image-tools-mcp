@@ -115,6 +115,65 @@ class OllamaProvider(VisionProvider):
             logger.error(f"Ollama API error: {e}")
             raise
 
+    async def compare(
+        self,
+        image_data1: bytes,
+        image_data2: bytes,
+        prompt: str,
+        model: str | None = None,
+    ) -> str:
+        """Compare two images using Ollama API."""
+        model = self.validate_model(model)
+
+        image_b64_1 = base64.b64encode(image_data1).decode("utf-8")
+        image_b64_2 = base64.b64encode(image_data2).decode("utf-8")
+
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "images": [image_b64_1, image_b64_2],
+            "stream": False,
+        }
+
+        if self.debug:
+            print(f"\n{'='*60}")
+            print(f"DEBUG MODE - Ollama Compare Request")
+            print(f"{'='*60}")
+            print(f"Model: {model}")
+            print(f"Image 1: {len(image_b64_1)} chars")
+            print(f"Image 2: {len(image_b64_2)} chars")
+            print(f"{'='*60}\n")
+
+        start_time = time.time()
+
+        try:
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                async with session.post(
+                    f"{self.base_url}/api/generate",
+                    json=payload,
+                ) as response:
+                    elapsed = time.time() - start_time
+
+                    if self.debug:
+                        print(f"Status: {response.status}")
+                        print(f"Response time: {elapsed:.2f}s")
+
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise aiohttp.ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=response.status,
+                            message=error_text,
+                        )
+
+                    result = await response.json()
+                    return result.get("response", "")
+
+        except aiohttp.ClientError as e:
+            logger.error(f"Ollama API error: {e}")
+            raise
+
     async def health_check(self) -> bool:
         """Check if Ollama is running."""
         try:

@@ -109,6 +109,70 @@ class LMStudioProvider(VisionProvider):
             logger.error(f"LM Studio API error: {e}")
             raise
 
+    async def compare(
+        self,
+        image_data1: bytes,
+        image_data2: bytes,
+        prompt: str,
+        model: str | None = None,
+    ) -> str:
+        """Compare two images using LM Studio API."""
+        model = model or "qwen/qwen3-vl-4b"
+
+        image_b64_1 = base64.b64encode(image_data1).decode("utf-8")
+        image_b64_2 = base64.b64encode(image_data2).decode("utf-8")
+
+        payload = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_1}"}},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_2}"}},
+                    ],
+                }
+            ],
+        }
+
+        if self.debug:
+            print(f"\n{'='*60}")
+            print(f"DEBUG MODE - LM Studio Compare Request")
+            print(f"{'='*60}")
+            print(f"Model: {model}")
+            print(f"{'='*60}\n")
+
+        start_time = time.time()
+
+        try:
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                async with session.post(
+                    f"{self.base_url}/v1/chat/completions",
+                    json=payload,
+                ) as response:
+                    elapsed = time.time() - start_time
+
+                    if self.debug:
+                        print(f"Status: {response.status}")
+                        print(f"Response time: {elapsed:.2f}s")
+
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise aiohttp.ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=response.status,
+                            message=error_text,
+                        )
+
+                    result = await response.json()
+                    return result["choices"][0]["message"]["content"]
+
+        except aiohttp.ClientError as e:
+            logger.error(f"LM Studio API error: {e}")
+            raise
+
     async def health_check(self) -> bool:
         """Check if LM Studio is running."""
         try:

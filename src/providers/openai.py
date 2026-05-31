@@ -106,6 +106,68 @@ class OpenAIProvider(VisionProvider):
             logger.error(f"OpenAI API error: {e}")
             raise
 
+    async def compare(
+        self,
+        image_data1: bytes,
+        image_data2: bytes,
+        prompt: str,
+        model: str | None = None,
+    ) -> str:
+        """Compare two images using OpenAI API."""
+        model = model or self.default_model
+
+        image_b64_1 = base64.b64encode(image_data1).decode("utf-8")
+        image_b64_2 = base64.b64encode(image_data2).decode("utf-8")
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_1}"}},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64_2}"}},
+                    ],
+                }
+            ],
+        }
+
+        if self.debug:
+            print(f"\n{'='*60}")
+            print(f"DEBUG MODE - OpenAI Compare Request")
+            print(f"{'='*60}")
+            print(f"Model: {model}")
+            print(f"{'='*60}\n")
+
+        start_time = time.time()
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                elapsed = time.time() - start_time
+
+                if self.debug:
+                    print(f"Status: {response.status_code}")
+                    print(f"Response time: {elapsed:.2f}s")
+
+                response.raise_for_status()
+                result = response.json()
+                return result["choices"][0]["message"]["content"]
+
+        except httpx.HTTPError as e:
+            logger.error(f"OpenAI API error: {e}")
+            raise
+
     async def health_check(self) -> bool:
         """Check if OpenAI API is accessible."""
         try:
