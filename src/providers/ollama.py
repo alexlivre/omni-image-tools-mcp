@@ -24,7 +24,7 @@ class OllamaProvider(VisionProvider):
     def validate_model(self, model: str | None) -> str:
         """Validate and return the model to use."""
         if model is None:
-            model = self.allowed_models[0] if self.allowed_models else "qwen3-vl:4b"
+            model = self.config.default_model or self.allowed_models[0] if self.allowed_models else "qwen3-vl:4b"
 
         if model not in self.allowed_models:
             raise ValueError(
