@@ -20,14 +20,7 @@ def get_vision_prompt(tool: str, variant: str | None = None) -> str:
     return tool_prompts.get("default", "")
 
 
-def get_processing_guidelines(tool: str) -> dict:
-    """Get processing guidelines for a tool."""
-    prompts = load_prompts("processing.yaml")
-    return prompts.get(tool, {})
-
-
 __all__ = [
     "load_prompts",
     "get_vision_prompt",
-    "get_processing_guidelines",
 ]

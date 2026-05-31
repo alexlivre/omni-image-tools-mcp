@@ -63,7 +63,7 @@ class OpenAIProvider(VisionProvider):
             print(f"Model: {model}")
             print(f"Image size: {image_size_kb:.1f} KB")
             print(f"Prompt length: {len(prompt)} chars")
-            print(f"Timeout: {self.timeout.total}s")
+            print(f"Timeout: {self.timeout}s")
             print(f"{'='*60}\n")
 
         start_time = time.time()

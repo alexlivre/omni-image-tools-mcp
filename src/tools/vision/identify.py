@@ -11,7 +11,6 @@ from ...utils.gpu_memory import GPUResourceManager
 async def identify_objects(
     image_path: str,
     include_count: bool = False,
-    include_location: bool = False,
     categories: str | None = None,
     min_confidence: float = 0.5,
 ) -> dict[str, Any]:
@@ -20,7 +19,6 @@ async def identify_objects(
     Args:
         image_path: Path to the image file
         include_count: Include count of each object type
-        include_location: Include approximate location in image
         categories: Filter by categories (comma-separated)
         min_confidence: Minimum confidence threshold (0-1)
 
@@ -56,7 +54,6 @@ async def identify_objects(
         "provider": config.provider,
         "options": {
             "include_count": include_count,
-            "include_location": include_location,
             "categories": categories,
             "min_confidence": min_confidence,
         },

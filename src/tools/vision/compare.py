@@ -95,7 +95,6 @@ Based on these descriptions, {base_prompt}
 
 Provide a clear, structured comparison."""
 
-    import httpx
     comparison_result = await provider.analyze(
         image_datas[0],
         comparison_prompt,

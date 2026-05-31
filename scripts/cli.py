@@ -276,7 +276,7 @@ async def compare_images(args):
     from src.tools.vision.compare import compare_images as compare_func
 
     try:
-        result = await compare_func(args.image1, args.image2, args.compare_type)
+        result = await compare_func([args.image1, args.image2], args.compare_type)
         print("Comparison result:")
         print(result.get("result", ""))
         return 0

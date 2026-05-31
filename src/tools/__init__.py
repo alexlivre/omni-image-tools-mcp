@@ -36,26 +36,6 @@ TOOL_SCHEMAS = {
             "required": ["image_path"],
         },
     },
-    "describe_image": {
-        "name": "describe_image",
-        "description": "Use when you need to get a description of what an image contains. IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "image_path": {
-                    "type": "string",
-                    "description": "Path to the image file",
-                },
-                "description_type": {
-                    "type": "string",
-                    "enum": ["simple", "detailed", "verbose"],
-                    "default": "detailed",
-                    "description": "Type of description",
-                },
-            },
-            "required": ["image_path"],
-        },
-    },
     "identify_objects": {
         "name": "identify_objects",
         "description": "Use when you need to identify and locate objects in an image. IMPORTANT: For local providers (Ollama, LM Studio), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
@@ -70,11 +50,6 @@ TOOL_SCHEMAS = {
                     "type": "boolean",
                     "default": False,
                     "description": "Include count of each object type",
-                },
-                "include_location": {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Include approximate location in image",
                 },
                 "categories": {
                     "type": "string",
@@ -291,7 +266,7 @@ def register_all_tools() -> None:
     """Register all tools from schemas."""
     tool_functions = {
         "analyze_image": importlib.import_module("src.tools.vision.analyze").analyze_image,
-        "describe_image": importlib.import_module("src.tools.vision.describe").describe_image,
+
         "identify_objects": importlib.import_module("src.tools.vision.identify").identify_objects,
         "read_text": importlib.import_module("src.tools.vision.read_text").read_text,
         "compare_images": importlib.import_module("src.tools.vision.compare").compare_images,

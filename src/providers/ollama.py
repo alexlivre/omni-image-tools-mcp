@@ -138,8 +138,8 @@ class OllamaProvider(VisionProvider):
             print(f"DEBUG MODE - Ollama Compare Request")
             print(f"{'='*60}")
             print(f"Model: {model}")
-            print(f"Image 1: {len(image_b64_1)} chars")
-            print(f"Image 2: {len(image_b64_2)} chars")
+            for i, b64 in enumerate(images_b64):
+                print(f"  Image {i+1}: {len(b64)} chars")
             print(f"{'='*60}\n")
 
         start_time = time.time()
