@@ -1,244 +1,112 @@
-# Ollama Vision MCP Server
+# Omni-Image-Tools MCP
 
-A Model Context Protocol (MCP) server that provides powerful computer vision capabilities using Ollama's vision models. This server enables AI assistants like Claude Desktop and development tools like Cursor IDE to analyze images locally without any API costs.
+MCP (Model Context Protocol) server com ferramentas de imagem (visão + processamento) que dá capacidade visual a modelos de IA. Suporta múltiplos provedores: **OpenRouter**, **OpenAI**, **Ollama** e **LM Studio**.
 
-## 🌟 Features
+## Funcionalidades
 
-- **Local Processing**: All image analysis happens on your machine - no cloud APIs, no costs
-- **Privacy First**: Your images never leave your computer
-- **Multiple Vision Models**: Support for llava-phi3, llava:7b, llava:13b, and bakllava
-- **Comprehensive Tools**:
-  - `analyze_image` - Custom image analysis with optional prompts
-  - `describe_image` - Detailed image descriptions
-  - `identify_objects` - Object detection and listing
-  - `read_text` - Text extraction from images (OCR-like capabilities)
-- **Flexible Input**: Supports local files, URLs, and base64 encoded images
-- **Cross-Platform**: Works on Windows, macOS, and Linux
+### Ferramentas de Visão
+- `analyze_image` - Análise customizável com prompt
+- `describe_image` - Descrição detalhada do conteúdo
+- `identify_objects` - Identificar e localizar objetos
+- `read_text` - Extrair texto de imagens (OCR)
+- `compare_images` - Comparar duas imagens
 
-## 📋 Prerequisites
+### Ferramentas de Processamento
+- `prepare_image` - Preparar imagem (resize, otimizar)
+- `get_image_info` - Metadata e EXIF
+- `crop_image` - Cortar região específica
+- `convert_image_format` - Converter entre formatos
 
-### 1. Install Ollama
+### Provedores Suportados
 
-First, you need to install Ollama on your system:
+| Provedor | Tipo | API Key |
+|----------|------|---------|
+| Ollama | Local | Não |
+| LM Studio | Local | Não |
+| OpenRouter | Cloud | Sim |
+| OpenAI | Cloud | Sim |
 
-#### Windows
-Download and install from: https://ollama.ai/download/windows
+## Quick Start
 
-#### macOS
+### 1. Configurar Provider
+
 ```bash
-brew install ollama
-```
-Or download from: https://ollama.ai/download/mac
-
-#### Linux
-```bash
-curl -fsSL https://ollama.ai/install.sh | sh
-```
-
-### 2. Start Ollama
-
-Make sure Ollama is running:
-```bash
-ollama serve
+# .env
+OMNI_VISION_PROVIDER=ollama          # ou openrouter, openai, lmstudio
+OMNI_VISION_API_KEY=your-api-key     # necessário para cloud
+OMNI_VISION_DEFAULT_MODEL=qwen3-vl:4b
 ```
 
-### 3. Pull a Vision Model
+### 2. Testar via CLI
 
-Download at least one vision model (llava-phi3 recommended for efficiency):
 ```bash
-ollama pull llava-phi3
+# Listar tools
+python scripts/cli.py tools list
+
+# Descrever imagem
+python scripts/cli.py describe --image foto.jpg
+
+# Analisar com prompt customizado
+python scripts/cli.py analyze --image foto.jpg --prompt "O que há nesta imagem?"
+
+# Comparar duas imagens
+python scripts/cli.py compare --image1 a.jpg --image2 b.jpg
+
+# Benchmarks entre providers
+python scripts/cli.py benchmark --image foto.jpg --providers ollama,lmstudio
 ```
 
-Other available models:
+## Instalação
+
 ```bash
-ollama pull llava:7b     # More capable, requires more RAM
-ollama pull llava:13b    # Most capable, requires significant RAM
-ollama pull bakllava     # Alternative vision model
-```
+# Clone
+git clone https://github.com/alexlivre/omni-image-tools-mcp
+cd omni-image-tools-mcp
 
-### 4. Test Ollama
-
-Verify everything is working:
-```bash
-ollama run llava-phi3 "describe a simple scene"
-```
-
-## 🚀 Installation
-
-### Important: Use Virtual Environment (Recommended)
-
-Using a virtual environment is strongly recommended to avoid conflicts with system Python packages:
-
-#### Windows
-```bash
-# Create virtual environment
+# Crie venv
 python -m venv venv
+.\venv\Scripts\activate
 
-# Activate virtual environment
-venv\Scripts\activate
-
-# You should see (venv) in your command prompt
-```
-
-#### macOS/Linux
-```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate
-
-# You should see (venv) in your terminal prompt
-```
-
-### Option 1: Install from GitHub (Recommended)
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/ollama-vision-mcp
-cd ollama-vision-mcp
-
-# Create and activate virtual environment (see above)
-# Then install in development mode
+# Instale
 pip install -e .
 ```
 
-### Option 2: Install from PyPI (Coming Soon)
-```bash
-# Create and activate virtual environment (see above)
-# Then install
-pip install ollama-vision-mcp
-```
+## Configuração
 
-### Option 3: Manual Installation
-```bash
-# Clone or download this repository
-cd ollama-vision-mcp
+| Variável | Obrigatório | Default | Descrição |
+|----------|-------------|---------|-----------|
+| `OMNI_VISION_PROVIDER` | Sim | - | `ollama`, `openrouter`, `openai`, `lmstudio` |
+| `OMNI_VISION_API_KEY` | Cloud* | - | API key (*exceto local) |
+| `OMNI_VISION_DEFAULT_MODEL` | Não | varies | Modelo default por provider |
+| `OMNI_VISION_TIMEOUT` | Não | `120` | Timeout em segundos |
 
-# Create and activate virtual environment (see above)
-# Then install dependencies
-pip install -r requirements.txt
-```
+### Modelos Recomendados
 
-### Deactivating Virtual Environment
-When you're done working with the project:
-```bash
-# Windows
-deactivate
+**OpenRouter:**
+- `qwen/qwen3-vl-32b-instruct` - Bom custo-benefício
+- `google/gemini-2.5-flash` - Rápido e barato
 
-# macOS/Linux
-deactivate
-```
+**OpenAI:**
+- `gpt-5.4-mini` - Rápido e inteligente
 
-## ⚙️ Configuration
+**Ollama/LM Studio:**
+- `qwen3-vl:4b` - 3.3GB, boa performance
+- `qwen3-vl:2b` - 1.9GB, para machines fracas
 
-### Environment Variables
-
-You can configure the server using environment variables:
-
-```bash
-# Ollama API URL (default: http://localhost:11434)
-export OLLAMA_VISION_OLLAMA_URL=http://localhost:11434
-
-# Default model (default: llava-phi3)
-export OLLAMA_VISION_DEFAULT_MODEL=llava-phi3
-
-# Request timeout in seconds (default: 120)
-export OLLAMA_VISION_TIMEOUT=120
-
-# Log level (default: INFO)
-export OLLAMA_VISION_LOG_LEVEL=INFO
-```
-
-### Timeout Configuration for MCP Clients
-
-When using this server with MCP clients like EricAI-MCP-Chat, you may need to configure client-side timeouts to match the server's processing time:
-
-#### EricAI-MCP-Chat Configuration
-
-In your `mcp_config.json`:
-
-```json
-{
-  "servers": {
-    "ollama-vision-mcp": {
-      "enabled": true,
-      "command": "python",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\ollama-vision-mcp",
-      "Allowed Paths": "C:\\path\\to\\allowed_folder_1; C:\\path\\to\\allowed_folder_2",
-      "timeout": 10,       // General timeout for initialization (seconds)
-      "toolTimeout": 120   // Timeout for image analysis operations (seconds)
-    }
-  }
-}
-```
-
-**Note**: The `toolTimeout` should match or exceed the server's `OLLAMA_VISION_TIMEOUT` value to prevent premature disconnections during image analysis.
-
-### Configuration File
-
-Create `ollama-vision-config.json` in your working directory:
-
-```json
-{
-  "ollama_url": "http://localhost:11434",
-  "default_model": "llava-phi3",
-  "timeout": 120,
-  "log_level": "INFO",
-  "cache_enabled": false,
-  "model_preferences": [
-    "llava-phi3",
-    "llava:7b",
-    "llava:13b",
-    "bakllava"
-  ]
-}
-```
-
-## 🔧 Integration
+## Integração MCP
 
 ### Claude Desktop
 
-Add to your Claude Desktop configuration:
-
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Linux**: `~/.config/claude/claude_desktop_config.json`
-
-#### Using Virtual Environment (Recommended)
 ```json
 {
   "mcpServers": {
-    "ollama-vision": {
-      "command": "C:\\path\\to\\ollama-vision-mcp\\venv\\Scripts\\python.exe",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\ollama-vision-mcp"
-    }
-  }
-}
-```
-
-**macOS/Linux with venv:**
-```json
-{
-  "mcpServers": {
-    "ollama-vision": {
-      "command": "/path/to/ollama-vision-mcp/venv/bin/python",
-      "args": ["-m", "src.server"],
-      "cwd": "/path/to/ollama-vision-mcp"
-    }
-  }
-}
-```
-
-#### Without Virtual Environment
-```json
-{
-  "mcpServers": {
-    "ollama-vision": {
+    "omni-image-tools": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\ollama-vision-mcp"
+      "env": {
+        "OMNI_VISION_PROVIDER": "openrouter",
+        "OMNI_VISION_API_KEY": "sk-or-..."
+      }
     }
   }
 }
@@ -246,214 +114,45 @@ Add to your Claude Desktop configuration:
 
 ### Cursor IDE
 
-Add to your Cursor settings:
-
 ```json
 {
   "mcp.servers": {
-    "ollama-vision": {
-      "command": "ollama-vision-mcp",
-      "env": {
-        "OLLAMA_VISION_DEFAULT_MODEL": "llava-phi3"
-      }
-    }
-  }
-}
-```
-
-### EricAI-MCP-Chat
-
-Add to your `config/mcp_config.json`:
-
-#### With Virtual Environment (Recommended)
-```json
-{
-  "servers": {
-    "ollama-vision-mcp": {
-      "enabled": true,
-      "command": "C:\\path\\to\\ollama-vision-mcp\\venv\\Scripts\\python.exe",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\ollama-vision-mcp",
-      "autoStart": false,
-      "description": "Ollama vision model for image analysis",
-      "timeout": 10,
-      "toolTimeout": 120,
-      "env": {
-        "OLLAMA_VISION_DEFAULT_MODEL": "llava-phi3",
-        "OLLAMA_VISION_TIMEOUT": "120"
-      }
-    }
-  }
-}
-```
-
-#### Without Virtual Environment
-```json
-{
-  "servers": {
-    "ollama-vision-mcp": {
-      "enabled": true,
+    "omni-image-tools": {
       "command": "python",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\ollama-vision-mcp",
-      "autoStart": false,
-      "description": "Ollama vision model for image analysis",
-      "timeout": 10,
-      "toolTimeout": 120,
-      "env": {
-        "OLLAMA_VISION_DEFAULT_MODEL": "llava-phi3",
-        "OLLAMA_VISION_TIMEOUT": "120"
-      }
+      "args": ["-m", "src.server"]
     }
   }
 }
 ```
 
-**Key Configuration Notes:**
-- Set `autoStart: false` to prevent automatic startup (start manually when needed)
-- Configure `toolTimeout` to match or exceed the server's processing time
-- Use environment variables to customize model and timeout settings
+## GPU Memory Management
 
-## 📖 Usage Examples
-
-Once integrated with your MCP client, you can use natural language to analyze images:
-
-### Basic Image Description
-```
-"Describe the image at /path/to/photo.jpg"
-```
-
-### Custom Analysis
-```
-"Analyze /path/to/diagram.png and explain the architecture"
-```
-
-### Object Detection
-```
-"What objects are in the image at /path/to/scene.jpg?"
-```
-
-### Text Extraction
-```
-"Read the text from /path/to/document.png"
-```
-
-### URL Image Analysis
-```
-"Describe what's in this image: https://example.com/image.jpg"
-```
-
-## 🧪 Testing
-
-### Command Line Testing
-
-Test the server directly:
+O servidor monitora automaticamente modelos carregados em **Ollama** e **LM Studio** para evitar estouro de memória em GPUs residenciais.
 
 ```bash
-# First activate virtual environment
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+# Verificar status
+python scripts/cli.py gpu-status
 
-# Then run your test script
-python test_ollama_vision.py
+# Descarregar modelo específico
+python scripts/cli.py gpu-status --unload-ollama qwen3-vl:4b
+python scripts/cli.py gpu-status --unload-lmstudio qwen/qwen3-vl-4b
 ```
 
-Example test script:
-```python
-# test_ollama_vision.py
-import asyncio
-from src.server import OllamaVisionServer
+## Troubleshooting
 
-async def test():
-    server = OllamaVisionServer()
-    # Test your implementation
-    
-asyncio.run(test())
-```
+**Erro: "Provider não encontrado"**
+- Verifique `OMNI_VISION_PROVIDER` está setado
 
-### Run Tests
-```bash
-# Activate virtual environment first
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+**Erro: "API Key requerida"**
+- Cloud providers precisam de API key no `.env`
 
-# Run tests
-pytest tests/
-```
+**Timeout**
+- Aumente `OMNI_VISION_TIMEOUT`
 
-## 🐛 Troubleshooting
+**OOM (Out of Memory)**
+- Use `gpu-status` para verificar modelos carregados
+- Descarregue modelos não utilizados
 
-### Common Issues
+## License
 
-1. **"Ollama not found" Error**
-   - Ensure Ollama is installed and running: `ollama serve`
-   - Check if Ollama is accessible: `curl http://localhost:11434/api/tags`
-
-2. **"No vision models available" Error**
-   - Pull a vision model: `ollama pull llava-phi3`
-   - List available models: `ollama list`
-
-3. **Timeout Errors**
-   - Increase timeout: `export OLLAMA_VISION_TIMEOUT=300`
-   - First run may be slow as models load into memory
-
-4. **Memory Issues**
-   - llava-phi3 requires ~4GB RAM
-   - llava:7b requires ~8GB RAM
-   - llava:13b requires ~16GB RAM
-   - Close other applications to free memory
-
-### Debug Mode
-
-Enable debug logging:
-```bash
-export OLLAMA_VISION_LOG_LEVEL=DEBUG
-```
-
-## 🔍 Performance Tips
-
-1. **Model Selection**:
-   - Use `llava-phi3` for fastest responses
-   - Use larger models only when needed
-
-2. **Image Optimization**:
-   - Server automatically resizes large images
-   - Pre-resize images to 1024x1024 for faster processing
-
-3. **Hardware Acceleration**:
-   - GPU acceleration significantly improves performance
-   - Check Ollama GPU support for your system
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 🙏 Acknowledgments
-
-- [Ollama](https://ollama.ai) for providing local LLM capabilities
-- [Model Context Protocol](https://modelcontextprotocol.io) for the MCP specification
-- The open-source community for vision models like LLaVA
-
-## 📬 Support
-
-- **Issues**: [GitHub Issues](https://github.com/ollama-vision-mcp/ollama-vision-mcp/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ollama-vision-mcp/ollama-vision-mcp/discussions)
-- **Wiki**: [Project Wiki](https://github.com/ollama-vision-mcp/ollama-vision-mcp/wiki)
-
----
-
-Made with ❤️ for the MCP community
+MIT
