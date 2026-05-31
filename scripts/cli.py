@@ -112,7 +112,7 @@ async def describe_image(args):
         image_data = f.read()
 
     from src.prompts import get_vision_prompt
-    prompt = get_vision_prompt("describe_image", args.description_type)
+    prompt = get_vision_prompt("describe_image", args.type)
 
     try:
         result = await provider.analyze(image_data, prompt)
