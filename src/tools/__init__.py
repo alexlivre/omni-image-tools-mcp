@@ -286,6 +286,7 @@ def register_all_tools() -> None:
         "describe_image": importlib.import_module("src.tools.vision.describe").describe_image,
         "identify_objects": importlib.import_module("src.tools.vision.identify").identify_objects,
         "read_text": importlib.import_module("src.tools.vision.read_text").read_text,
+        "compare_images": importlib.import_module("src.tools.vision.compare").compare_images,
     }
 
     for tool_name, tool_schema in TOOL_SCHEMAS.items():

@@ -253,6 +253,38 @@ async def read_text(args):
         return 1
 
 
+async def compare_images(args):
+    """Compare two images."""
+    if not os.path.exists(args.image1):
+        print(f"Error: Image not found: {args.image1}")
+        return 1
+
+    if not os.path.exists(args.image2):
+        print(f"Error: Image not found: {args.image2}")
+        return 1
+
+    await verify_gpu_before_vision()
+
+    from src.config import Config, ConfigError
+
+    try:
+        config = Config.from_env()
+    except ConfigError as e:
+        print(f"Config error: {e.message}")
+        return 1
+
+    from src.tools.vision.compare import compare_images as compare_func
+
+    try:
+        result = await compare_func(args.image1, args.image2, args.compare_type)
+        print("Comparison result:")
+        print(result.get("result", ""))
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
 def get_image_info(args):
     """Get image metadata."""
     from PIL import Image
@@ -329,6 +361,12 @@ def main():
     readtext_parser.add_argument("--language-hint", help="Language hint (e.g., en, pt)")
     readtext_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
+    compare_parser = subparsers.add_parser("compare", help="Compare two images")
+    compare_parser.add_argument("--image1", required=True, help="Path to first image")
+    compare_parser.add_argument("--image2", required=True, help="Path to second image")
+    compare_parser.add_argument("--compare-type", choices=["similarities", "differences", "both"], default="both", help="What to compare")
+    compare_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
+
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")
     info_parser.add_argument("--include-exif", action="store_true", default=True, help="Include EXIF metadata")
@@ -383,6 +421,9 @@ def main():
 
     if args.command == "read-text":
         return asyncio.run(read_text(args))
+
+    if args.command == "compare":
+        return asyncio.run(compare_images(args))
 
     if args.command == "info":
         return get_image_info(args)
