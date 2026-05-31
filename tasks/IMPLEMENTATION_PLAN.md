@@ -302,7 +302,7 @@ python scripts/cli.py benchmark --image tests/fixtures/simple.jpg --providers al
 
 ## Status
 
-- [ ] Fase 1: Setup + Base
+- [x] Fase 1: Setup + Base (2026-05-31)
 - [ ] Fase 2: Foundation
 - [ ] Fase 3: Ollama Provider
 - [ ] Fase 4: Vision MVP
