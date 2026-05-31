@@ -1,114 +1,154 @@
 # Omni-Image-Tools MCP
 
-MCP server com ferramentas de visão e processamento de imagens para modelos de IA.
-**11 ferramentas** · **3 provedores** · **GPU Memory Management**
+Um servidor MCP que dá **visão computacional** para modelos de IA. Ele permite que a IA "veja" imagens: descrever, comparar, extrair texto, recortar objetos e muito mais.
+
+**11 ferramentas** · **3 provedores** · **Funciona com Opencode, Claude, Cursor**
 
 ---
 
-## Início Rápido
+## 🤔 Qual provedor usar?
+
+### Se você tem GPU (placa de vídeo) → Ollama
+
+> O modelo roda **no seu computador**, usando sua placa de vídeo. Grátis, privado, sem depender de internet.
+
+**Limite:** sua GPU tem memória finita — por isso só **1 imagem por vez** e modelos menores.
+
+### Se você não tem GPU ou quer mais qualidade → Nuvem
+
+> O modelo roda **na nuvem** (OpenAI, OpenRouter). Pago por uso, precisa de API key, sem limites de imagem.
+
+---
+
+## Escolha seu modelo
+
+| Para quem... | Use | Tamanho | Onde roda |
+|-------------|-----|---------|-----------|
+| PC fraco ou só testar | `qwen3-vl:2b` | 1.9GB 🟢 | Seu computador (Ollama) |
+| PC mediano | `qwen3-vl:4b` | 3.3GB 🟡 | Seu computador (Ollama) |
+| Qualidade profissional | `gpt-5.4-mini` | ☁️ | Nuvem (OpenAI, pago) |
+| Melhor custo-benefício | `qwen/qwen3-vl-32b-instruct` | ☁️ | Nuvem (OpenRouter, barato) |
+
+> ⚠️ **Memória importa:** Se você tem 4GB de VRAM, use `qwen3-vl:2b`. Com 6GB+, pode usar `qwen3-vl:4b`. Os modelos de nuvem não usam sua GPU.
+
+---
+
+## 🚀 Início Rápido
 
 ```bash
-# 1. Instalar
+# 1. Baixar e instalar
 git clone https://github.com/alexlivre/omni-image-tools-mcp
 cd omni-image-tools-mcp
-python -m venv venv && .\venv\Scripts\activate && pip install -e .
+python -m venv venv
+.\venv\Scripts\activate
+pip install -e .
 
-# 2. Configurar provider
+# 2. Se for usar Ollama (grátis, local):
 set OMNI_VISION_PROVIDER=ollama
 set OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
 
-# 3. Usar
-python scripts/cli.py analyze --image foto.jpg --prompt "O que há nesta imagem?"
-python scripts/cli.py extract --image carro.jpg --object "license plate"
+# 3. Testar
+python scripts/cli.py analyze --image foto.jpg --prompt "O que tem nesta imagem?"
 ```
+
+> 💡 **Dica:** Se quiser usar nuvem, veja a seção [Como configurar cada provedor](#-como-configurar-cada-provedor) mais abaixo.
 
 ---
 
-## Ferramentas
+## 🧰 Ferramentas
 
-### 👁️ Visão (usam IA)
+### 👁️ Visão (usam inteligência artificial)
 
-| Ferramenta | Descrição | Local | Online |
-|------------|-----------|-------|--------|
-| `analyze_image` | Análise com prompt customizado | 1 img | sem limite |
-| `identify_objects` | Identificar objetos na imagem | 1 img | sem limite |
-| `read_text` | OCR - extrair texto | 1 img | sem limite |
-| `compare_images` | Comparar 2-10 imagens | sequencial | paralelo |
+| Ferramenta | Pra que serve | Com Ollama | Com Nuvem |
+|------------|--------------|------------|-----------|
+| `analyze_image` | Analisar imagem com prompt livre | 1 imagem por vez | Várias imagens |
+| `identify_objects` | Detectar objetos na imagem | 1 imagem por vez | Várias imagens |
+| `read_text` | Extrair texto (OCR) | 1 imagem por vez | Várias imagens |
+| `compare_images` | Comparar 2 a 10 imagens | Processa uma por uma | Processa tudo junto |
 
-### 🛠️ Processamento (PIL)
+> **Por que o Ollama tem limite de 1 imagem?** Porque a memória da GPU é limitada. Enviar várias imagens de uma vez pode estourar a memória e travar tudo. O sistema **automaticamente** gerencia isso — na nuvem não tem esse problema.
 
-| Ferramenta | Descrição |
-|------------|-----------|
-| `prepare_image` | Redimensionar e otimizar |
-| `get_image_info` | Metadados (formato, dimensões, EXIF) |
-| `crop_image` | Recortar por coordenadas |
-| `convert_image_format` | Converter formato (JPEG/PNG/WEBP/BMP/GIF) |
-| `download_image` | Baixar imagem de URL |
-| `extract_object` | Localizar e recortar objeto automaticamente |
+### 🛠️ Processamento (não usam IA, são rápidas)
+
+| Ferramenta | Pra que serve |
+|------------|--------------|
+| `prepare_image` | Redimensionar e otimizar foto |
+| `get_image_info` | Ver dados da foto (tamanho, formato, etc) |
+| `crop_image` | Recortar uma parte da foto |
+| `convert_image_format` | Mudar formato (JPEG, PNG, WEBP...) |
+| `download_image` | Baixar foto da internet |
+| `extract_object` | **Achar e recortar um objeto automaticamente** |
 
 ### ⚙️ Sistema
 
-| Ferramenta | Descrição |
-|------------|-----------|
-| `get_provider_info` | Info do provedor e limites atuais |
+| Ferramenta | Pra que serve |
+|------------|--------------|
+| `get_provider_info` | Mostra qual provedor está ativo e seus limites |
 
 ---
 
-## Provedores
+## 🌟 Ferramenta Destaque: `extract_object`
 
-| Provedor | Tipo | GPU | API Key | Modelo padrão |
-|----------|------|-----|---------|---------------|
-| **Ollama** | Local | Sua GPU | — | `qwen3-vl:2b` |
-| **OpenRouter** | Cloud | Cloud | ✅ | `qwen/qwen3-vl-32b-instruct` |
-| **OpenAI** | Cloud | Cloud | ✅ | `gpt-5.4-mini` |
+Essa ferramenta é **inteligente**: você diz o que quer recortar e ela acha sozinha.
 
-**Local (Ollama):** 1 imagem/request, compare sequencial, GPU gerenciada automaticamente
-**Online (OpenRouter/OpenAI):** sem limite de imagens, compare paralelo, GPU do provedor
+```bash
+python scripts/cli.py extract --image carro.jpg --object "license plate"
+```
+
+**O que acontece por dentro:**
+1. A IA localiza o objeto na imagem → coordenadas
+2. O sistema recorta automaticamente a região
+3. Salva o recorte em `test_images/`
+
+Útil para: placas de carro, rostos, logotipos, textos específicos, qualquer objeto visível.
 
 ---
 
-## Configuração
+## ⚙️ Como configurar cada provedor
 
-### Variáveis de Ambiente
+### Opção A: Ollama (gratuito, local)
 
-| Variável | Obrigatório | Padrão | Descrição |
+> Requer: [Ollama](https://ollama.com) instalado e o modelo baixado (`ollama pull qwen3-vl:2b`)
+
+```bash
+set OMNI_VISION_PROVIDER=ollama
+set OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
+```
+
+### Opção B: OpenAI (nuvem, pago)
+
+> Requer: [API key da OpenAI](https://platform.openai.com/api-keys)
+
+```bash
+set OMNI_VISION_PROVIDER=openai
+set OMNI_VISION_API_KEY=sk-proj-sua-chave-aqui
+set OMNI_VISION_DEFAULT_MODEL=gpt-5.4-mini
+```
+
+### Opção C: OpenRouter (nuvem, barato)
+
+> Requer: [API key do OpenRouter](https://openrouter.ai/keys)
+
+```bash
+set OMNI_VISION_PROVIDER=openrouter
+set OMNI_VISION_API_KEY=sk-or-v1-sua-chave-aqui
+set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
+```
+
+### Todas as opções
+
+| Variável | Obrigatório | Padrão | O que faz |
 |----------|-------------|--------|-----------|
-| `OMNI_VISION_PROVIDER` | Sim | — | `ollama`, `openrouter`, `openai` |
-| `OMNI_VISION_API_KEY` | Cloud* | — | API key do provedor |
-| `OMNI_VISION_DEFAULT_MODEL` | Não | provider.dependente | Modelo padrão |
-| `OMNI_VISION_TIMEOUT` | Não | `120` | Timeout em segundos |
-
-### Modelos Recomendados
-
-**Ollama:** `qwen3-vl:2b` (1.9GB) · `qwen3-vl:4b` (3.3GB)
-**OpenRouter:** `qwen/qwen3-vl-32b-instruct` · `google/gemini-2.5-flash`
-**OpenAI:** `gpt-5.4-mini` · `gpt-5.4`
+| `OMNI_VISION_PROVIDER` | ✅ Sim | — | `ollama`, `openrouter` ou `openai` |
+| `OMNI_VISION_API_KEY` | Só nuvem | — | Sua chave do provedor |
+| `OMNI_VISION_DEFAULT_MODEL` | ❌ Não | Varia | Qual modelo usar |
+| `OMNI_VISION_TIMEOUT` | ❌ Não | 120s | Tempo máximo de espera |
 
 ---
 
-## Referência Rápida
+## 🔌 Integração com Opencode
 
-| Tool | Parâmetros principais | Exemplo |
-|------|----------------------|---------|
-| `analyze_image` | `image_path`, `prompt`, `detail_level` | `analyze_image("foto.jpg", "Descreva", "detailed")` |
-| `extract_object` | `image_path`, `object_description`, `output_filename` | `extract_object("carro.jpg", "license plate")` |
-| `download_image` | `url` | `download_image("https://exemplo.com/img.jpg")` |
-| `compare_images` | `image_paths[]`, `compare_type` | `compare_images(["a.jpg","b.jpg"], "both")` |
-| `identify_objects` | `image_path`, `include_count`, `categories` | `identify_objects("foto.jpg")` |
-| `read_text` | `image_path`, `language_hint`, `preserve_formatting` | `read_text("doc.jpg", "pt")` |
-| `prepare_image` | `image_path`, `max_width`, `quality`, `format` | `prepare_image("foto.jpg", 1024)` |
-| `crop_image` | `image_path`, `x`, `y`, `width`, `height` | `crop_image("foto.jpg", 100, 200, 300, 200)` |
-| `convert_image_format` | `image_path`, `output_format`, `quality` | `convert_image_format("foto.png", "JPEG")` |
-| `get_image_info` | `image_path`, `include_exif` | `get_image_info("foto.jpg")` |
-| `get_provider_info` | — | `get_provider_info()` |
-
----
-
-## Integração MCP
-
-Adicione ao seu arquivo de configuração MCP (substitua os caminhos):
-
-### Opencode (`~/.config/opencode/opencode.json`)
+Adicione no arquivo `~/.config/opencode/opencode.json`:
 
 ```json
 {
@@ -127,79 +167,62 @@ Adicione ao seu arquivo de configuração MCP (substitua os caminhos):
 }
 ```
 
-> **Troque o provider** alterando `environment`:
-> - OpenAI: `"OMNI_VISION_PROVIDER": "openai"` + `"OMNI_VISION_API_KEY": "sk-proj-..."`
-> - OpenRouter: `"OMNI_VISION_PROVIDER": "openrouter"` + `"OMNI_VISION_API_KEY": "sk-or-..."`
+> Troque o provider alterando a parte `environment`:
+> - **OpenAI:** `"OMNI_VISION_PROVIDER": "openai"`, adicione `"OMNI_VISION_API_KEY": "sk-..."`
+> - **OpenRouter:** `"OMNI_VISION_PROVIDER": "openrouter"`, adicione `"OMNI_VISION_API_KEY": "sk-or-..."`
 
-### Claude Desktop (`claude_desktop_config.json`)
+> ⚠️ **Lembrete:** O `command` deve apontar para o `python.exe` dentro da pasta `venv` do projeto. Depois de alterar, **reinicie o opencode**.
 
-```json
-{
-  "mcpServers": {
-    "omni-image-tools": {
-      "command": "C:\\caminho\\venv\\Scripts\\python.exe",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\caminho\\omni-image-tools-mcp",
-      "env": {
-        "OMNI_VISION_PROVIDER": "openrouter",
-        "OMNI_VISION_API_KEY": "sk-or-..."
-      }
-    }
-  }
-}
-```
+Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](https://cursor.sh).
 
 ---
 
-## GPU Memory Management
+## 🖥️ Gerenciamento de Memória GPU
 
-Para Ollama, o servidor gerencia automaticamente a GPU:
+**Só se aplica se você usa Ollama (local).**
 
-- **Verificação única** na primeira chamada (cacheada)
-- **Descarrega** automaticamente modelos diferentes ao trocar
-- **Previne** múltiplos modelos na GPU
+Quando você usa Ollama, o modelo fica carregado na memória da placa de vídeo. Se você pedir para carregar outro modelo, o sistema **automaticamente descarrega o anterior** antes de carregar o novo — evitando que a memória estoure.
 
 ```bash
-python scripts/cli.py gpu-status                    # Ver status
-python scripts/cli.py gpu-status --unload-ollama qwen3-vl:4b  # Descarregar
+python scripts/cli.py gpu-status                    # Ver o que está carregado
+python scripts/cli.py gpu-status --unload-ollama modelo  # Forçar descarregar
 ```
 
----
-
-## Troubleshooting
-
-| Problema | Causa | Solução |
-|----------|-------|---------|
-| Provider não encontrado | `OMNI_VISION_PROVIDER` não setado | Configure a variável |
-| API Key requerida | Cloud sem key | Adicione `OMNI_VISION_API_KEY` |
-| Timeout | Modelo lento | Aumente `OMNI_VISION_TIMEOUT` |
-| GPU OOM | Múltiplos modelos | GPU Manager gerencia automaticamente |
-| Request timed out | Primeira carga | Ocorre só na primeira vez |
+Isso tudo acontece **automagicamente** — você não precisa se preocupar.
 
 ---
 
-## Arquitetura
+## ❓ Problemas Comuns
+
+| Problema | Por que acontece | Como resolver |
+|----------|-----------------|---------------|
+| "Provider não encontrado" | Você não configurou o provedor | Configure `OMNI_VISION_PROVIDER` |
+| "API Key requerida" | Provider de nuvem sem chave | Adicione `OMNI_VISION_API_KEY` |
+| Demora muito para responder | Modelo grande em PC fraco | Aumente `OMNI_VISION_TIMEOUT` ou use modelo menor |
+| "Request timed out" | Primeira vez usando o modelo | O modelo precisa carregar na GPU (só na primeira vez) |
+| GPU sem memória | Muitos modelos carregados | O sistema gerencia automaticamente |
+
+---
+
+## 📁 Estrutura do Projeto
 
 ```
 src/
-├── server.py              # Servidor MCP
-├── config.py              # Configuração por env vars
-├── errors.py              # Error handling
+├── server.py              # Servidor que se comunica com a IA
+├── config.py              # Configurações
 ├── providers/
-│   ├── base.py            # Classe abstrata
-│   ├── ollama.py          # Local
-│   ├── openrouter.py      # Cloud
-│   └── openai.py          # Cloud
+│   ├── ollama.py          # Conexão com Ollama (local)
+│   ├── openrouter.py      # Conexão com OpenRouter (nuvem)
+│   └── openai.py          # Conexão com OpenAI (nuvem)
 ├── tools/
-│   ├── vision/            # analyze, identify, read_text, compare
-│   ├── processing/        # prepare, info, crop, convert, download, extract
-│   └── system/            # get_provider_info
+│   ├── vision/            # Ferramentas de visão (IA)
+│   └── processing/        # Ferramentas de processamento (PIL)
 └── utils/
-    └── gpu_memory.py      # GPU Resource Manager
+    └── gpu_memory.py      # Controle de memória da GPU
 ```
 
 ---
 
-## License
+## 📄 Licença
 
 MIT
