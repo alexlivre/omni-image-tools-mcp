@@ -255,3 +255,17 @@ src/
 ## 📄 Licença
 
 MIT
+
+---
+
+## 🙏 Créditos
+
+Este projeto foi baseado no [ollama-vision-mcp](https://github.com/xkiranj/ollama-vision-mcp)
+de [xkiranj](https://github.com/xkiranj), usado como referência de estudo.
+
+A partir dele, fizemos mudanças significativas:
+- Expansão para múltiplos provedores (OpenRouter, OpenAI)
+- Arquitetura modular (ProviderFactory, ToolRegistry)
+- GPU Memory Manager
+- Novas ferramentas (extract_object, download_image, get_provider_info)
+- Remoção de código redundante e limpeza geral
