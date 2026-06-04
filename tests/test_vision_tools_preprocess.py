@@ -69,3 +69,27 @@ async def test_read_text_sends_preprocessed_bytes(tmp_path):
 
     assert max(captured["dim"]) <= 1536
     assert captured["format"] == "JPEG"
+
+
+@pytest.mark.asyncio
+async def test_identify_objects_sends_preprocessed_bytes(tmp_path):
+    src = tmp_path / "scene.jpg"
+    Image.new("RGB", (1800, 1200), (100, 150, 200)).save(src)
+
+    captured = {}
+
+    async def fake_analyze(image_data, prompt, model=None):
+        with Image.open(io.BytesIO(image_data)) as im:
+            captured["dim"] = im.size
+        return "[]"
+
+    import src.tools.vision.identify as identify_module
+
+    with patch.object(identify_module, "ProviderFactory") as factory_cls, \
+         patch.object(identify_module, "get_config") as cfg:
+        provider = AsyncMock(analyze=fake_analyze)
+        factory_cls.get.return_value = provider
+        cfg.return_value.provider = "ollama"
+        await identify_module.identify_objects(image_path=str(src))
+
+    assert max(captured["dim"]) <= 1536

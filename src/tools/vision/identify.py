@@ -5,6 +5,7 @@ from typing import Any
 from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
+from ...utils import preprocess_to_bytes
 from ...utils.gpu_memory import GPUResourceManager
 
 
@@ -28,8 +29,7 @@ async def identify_objects(
     config = get_config()
     provider = ProviderFactory.get(config.provider, config, debug=False)
 
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    image_data = preprocess_to_bytes(image_path)
 
     prompt_parts = []
 
