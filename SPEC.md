@@ -17,6 +17,18 @@ Este projeto permite que modelos de IA sem capacidade visual "enxerguem" atravé
 
 ## Ferramentas (Tools)
 
+## Regra de Pré-processamento Automático de Imagens
+
+Toda imagem recebida por uma vision tool passa por um pipeline fixo **antes** de qualquer análise ou envio ao modelo. **Não é opt-out.**
+
+- Redimensiona (Lanczos) mantendo proporção: lado maior máx = 1536 px; imagens com lado < 768 px ficam no tamanho original.
+- Converte para RGB, salva como JPEG q90 progressivo otimizado.
+- Meta: 300 KB–1 MB.
+- Cache em tempdir por SHA-256.
+- Para `extract_object`, o crop final usa a imagem **original** (não a pré-processada).
+
+Detalhes: ver `docs/PROCESSING.md`.
+
 ### MVP (v1)
 
 | Tool | Descrição | Parâmetros |

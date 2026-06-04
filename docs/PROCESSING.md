@@ -154,3 +154,50 @@ extract_faces(
 - [x] Adicionar suporte pillow-heif para fotos iPhone
 - [ ] Criar thumbnail com Pillow ou lib separada?
 - [ ] Detecção de faces com face_recognition? (heavy dependency)
+
+---
+
+## Pre-processamento Automático de Imagens
+
+**Regra obrigatória** aplicada a **todas** as imagens recebidas por vision tools (`analyze_image`, `read_text`, `identify_objects`, `compare_images`, `extract_object`), **antes** de qualquer análise ou envio ao modelo. Não é opt-out.
+
+### Pipeline fixo
+
+1. **Redimensionamento** (obrigatório)
+   - Mantém proporção original.
+   - Lado maior máximo = **1536 px**.
+   - Se a imagem já tiver lado maior < 768 px, **mantém o tamanho original** (sem upscaling).
+   - Filtro **Lanczos** (alta qualidade).
+
+2. **Conversão e compactação** (obrigatório)
+   - Conversão para **RGB** (canal alpha removido se existir).
+   - Salva como **JPEG qualidade 90**, `optimize=True`, `progressive=True`.
+   - Meta: arquivo final entre **300 KB e 1 MB** (preferencial; tolerante fora da faixa para imagens sintéticas ou muito simples).
+
+### Onde é aplicado
+
+| Tool | Comportamento |
+|------|---------------|
+| `analyze_image` | Envia ao model a versão pré-processada |
+| `read_text` | Envia ao model a versão pré-processada |
+| `identify_objects` | Envia ao model a versão pré-processada |
+| `compare_images` | Pré-processa **cada** imagem antes de enviar |
+| `extract_object` | Pré-processa a imagem enviada ao model; o **crop final é feito da imagem original** (preserva precisão do recorte) |
+
+### Cache
+
+- Resultados são cacheados em `<tempdir>/omni-image-tools/preprocessed/<sha256>.jpg`, indexados pelo SHA-256 do arquivo original.
+- Repetições com a mesma imagem não reprocessam.
+
+### Constantes (não configuráveis)
+
+```python
+MAX_LONGEST_SIDE = 1536
+KEEP_BELOW = 768
+JPEG_QUALITY = 90
+```
+
+### Implementação
+
+- Módulo: `src/utils/image_preprocessor.py`
+- Função pública: `preprocess_to_bytes(path: str | Path) -> bytes`

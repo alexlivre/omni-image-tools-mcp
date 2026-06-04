@@ -135,3 +135,9 @@ omni-image-tools-mcp/
 
 ### Modificar Prompt
 Editar `src/prompts/vision.yaml` — não precisa mexer código.
+
+### Fase 10: Pré-processamento Automático
+- [x] Criar `src/utils/image_preprocessor.py` (pipeline fixo, cache por SHA-256)
+- [x] Integrar em `analyze_image`, `read_text`, `identify_objects`, `compare_images`
+- [x] Integrar em `extract_object` (preprocessa input, crop do original)
+- [x] Documentar em `docs/PROCESSING.md` e `SPEC.md`
