@@ -6,6 +6,7 @@ from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
 from ...utils.gpu_memory import GPUResourceManager
+from ...utils import preprocess_to_bytes
 
 
 async def analyze_image(
@@ -28,8 +29,7 @@ async def analyze_image(
     config = get_config()
     provider = ProviderFactory.get(config.provider, config, debug=False)
 
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    image_data = preprocess_to_bytes(image_path)
 
     if prompt is None:
         prompt = get_vision_prompt("analyze_image", detail_level)
