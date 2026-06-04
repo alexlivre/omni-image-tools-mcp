@@ -93,3 +93,33 @@ async def test_identify_objects_sends_preprocessed_bytes(tmp_path):
         await identify_module.identify_objects(image_path=str(src))
 
     assert max(captured["dim"]) <= 1536
+
+
+@pytest.mark.asyncio
+async def test_compare_images_sends_all_preprocessed(tmp_path):
+    a = tmp_path / "a.jpg"
+    b = tmp_path / "b.jpg"
+    Image.new("RGB", (3000, 2000), (255, 0, 0)).save(a)
+    Image.new("RGB", (2400, 1800), (0, 255, 0)).save(b)
+
+    captured = []
+
+    async def fake_compare(image_datas, prompt, model=None):
+        for d in image_datas:
+            with Image.open(io.BytesIO(d)) as im:
+                captured.append((im.size, im.format))
+        return "diff"
+
+    import src.tools.vision.compare as compare_module
+
+    with patch.object(compare_module, "ProviderFactory") as factory_cls, \
+         patch.object(compare_module, "get_config") as cfg:
+        provider = AsyncMock(compare=fake_compare)
+        factory_cls.get.return_value = provider
+        cfg.return_value.provider = "openrouter"
+        await compare_module.compare_images(image_paths=[str(a), str(b)])
+
+    assert len(captured) == 2
+    for dim, fmt in captured:
+        assert max(dim) <= 1536
+        assert fmt == "JPEG"

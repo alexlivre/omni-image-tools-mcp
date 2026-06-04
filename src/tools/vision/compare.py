@@ -5,6 +5,7 @@ from typing import Any
 from ...config import get_config, ProviderType
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
+from ...utils import preprocess_to_bytes
 from ...utils.gpu_memory import GPUResourceManager
 
 
@@ -40,10 +41,7 @@ async def compare_images(
     config = get_config()
     provider = ProviderFactory.get(config.provider, config, debug=False)
 
-    image_datas = []
-    for path in image_paths:
-        with open(path, "rb") as f:
-            image_datas.append(f.read())
+    image_datas = [preprocess_to_bytes(p) for p in image_paths]
 
     prompt = get_vision_prompt("compare_images", compare_type)
 
