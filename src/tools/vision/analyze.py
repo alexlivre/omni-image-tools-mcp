@@ -5,8 +5,8 @@ from typing import Any
 from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
-from ...utils.gpu_memory import GPUResourceManager
 from ...utils import preprocess_to_bytes
+from ...utils.gpu_memory import GPUResourceManager
 
 
 async def analyze_image(
