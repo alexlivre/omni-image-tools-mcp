@@ -49,6 +49,18 @@ def test_small_image_keeps_original_size(tmp_path):
     assert (w, h) == (500, 400)
 
 
+def test_below_keep_below_keeps_original_even_if_still_jpeg(tmp_path):
+    # 500x400 has longest=500 < 768, but should still be converted to JPEG RGB
+    # (per spec rule 2 — conversion is mandatory, only resize is conditional)
+    src = tmp_path / "tiny.png"
+    _save_test_image(src, (500, 400), mode="RGBA", color=(10, 20, 30, 255))
+    data = preprocess_to_bytes(src)
+    with Image.open(io.BytesIO(data)) as out:
+        assert out.size == (500, 400)
+        assert out.mode == "RGB"
+        assert out.format == "JPEG"
+
+
 def test_midrange_image_keeps_original_size(tmp_path):
     src = tmp_path / "mid.jpg"
     _save_test_image(src, (1200, 900))
@@ -84,7 +96,7 @@ def test_output_is_progressive_jpeg_quality_90(tmp_path):
         assert out.info.get("progressive") is True or out.info.get("progression") is not None
 
 
-def test_output_is_lanczos_resized_when_needed(tmp_path):
+def test_resize_preserves_aspect_ratio(tmp_path):
     src = tmp_path / "big2.jpg"
     _save_test_image(src, (2000, 1000))
     data = preprocess_to_bytes(src)

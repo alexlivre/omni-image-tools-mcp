@@ -3,7 +3,9 @@
 Applies a fixed pipeline to every image passed to a vision tool, before
 any analysis or model call:
 
-  1. Resize (Lanczos) if longest side > 1536 px. Keep original size otherwise.
+  1. Resize (Lanczos) if longest side > 1536 px. KEEP_BELOW (768) is the
+     floor below which we never even consider resizing. Keep original
+     size otherwise.
   2. Convert to RGB (strips alpha if present).
   3. Save as JPEG quality 90, progressive, optimize=True.
 
@@ -24,8 +26,6 @@ logger = logging.getLogger(__name__)
 MAX_LONGEST_SIDE: int = 1536
 KEEP_BELOW: int = 768
 JPEG_QUALITY: int = 90
-TARGET_MIN_KB: int = 300
-TARGET_MAX_KB: int = 1024
 
 CACHE_ROOT: Path = Path(tempfile.gettempdir()) / "omni-image-tools" / "preprocessed"
 
@@ -37,9 +37,16 @@ def _cache_path_for(original_path: Path) -> Path:
 
 
 def _resize_if_needed(img: Image.Image) -> Image.Image:
-    """Resize with Lanczos if longest side > MAX_LONGEST_SIDE."""
+    """Resize with Lanczos if longest side > MAX_LONGEST_SIDE.
+
+    Images whose longest side is below KEEP_BELOW are never even
+    considered for resizing — they are returned as-is. Otherwise, only
+    images with longest side > MAX_LONGEST_SIDE are scaled down.
+    """
     w, h = img.size
     longest = max(w, h)
+    if longest < KEEP_BELOW:
+        return img
     if longest <= MAX_LONGEST_SIDE:
         return img
     scale = MAX_LONGEST_SIDE / longest
