@@ -10,6 +10,7 @@ from PIL import Image
 
 from ...config import get_config
 from ...providers import ProviderFactory
+from ...utils import preprocess_to_bytes
 from ...utils.gpu_memory import GPUResourceManager
 
 
@@ -34,8 +35,7 @@ async def extract_object(
     config = get_config()
     provider = ProviderFactory.get(config.provider, config, debug=False)
 
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    image_data = preprocess_to_bytes(image_path)
 
     img = Image.open(image_path)
     img_width, img_height = img.size

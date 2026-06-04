@@ -123,3 +123,37 @@ async def test_compare_images_sends_all_preprocessed(tmp_path):
     for dim, fmt in captured:
         assert max(dim) <= 1536
         assert fmt == "JPEG"
+
+
+@pytest.mark.asyncio
+async def test_extract_object_preprocesses_for_vision_but_crops_original(tmp_path):
+    src = tmp_path / "scene.png"
+    Image.new("RGBA", (3000, 2000), (50, 200, 100, 255)).save(src)
+
+    sent_to_vision = {}
+
+    async def fake_analyze(image_data, prompt, model=None):
+        with Image.open(io.BytesIO(image_data)) as im:
+            sent_to_vision["dim"] = im.size
+            sent_to_vision["format"] = im.format
+        return '{"bbox_2d": [100, 100, 500, 500]}'
+
+    import src.tools.processing.extract as extract_module
+
+    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
+         patch.object(extract_module, "get_config") as cfg:
+        provider = AsyncMock(analyze=fake_analyze)
+        factory_cls.get.return_value = provider
+        cfg.return_value.provider = "ollama"
+        result = await extract_module.extract_object(
+            image_path=str(src),
+            object_description="thing",
+            output_filename=str(tmp_path / "out.png"),
+        )
+
+    assert max(sent_to_vision["dim"]) <= 1536
+    assert sent_to_vision["format"] == "JPEG"
+
+    assert result["success"] is True
+    assert result["original_size"] == (3000, 2000)
+    assert result["extracted_size"] == (1200, 800)
