@@ -153,6 +153,7 @@ ehthumbs.db
 tests/*.png
 tests/*.jpg
 tests/*.jpeg
+test_images/
 
 # Config files (except examples)
 ollama-vision-config.json
