@@ -37,8 +37,6 @@ FIXTURES = [
 
 
 def main():
-    import os
-    import shutil
     from pathlib import Path
 
     fixtures_dir = Path(__file__).parent.parent / "tests" / "fixtures"
@@ -48,7 +46,6 @@ def main():
     print()
 
     for fixture in FIXTURES:
-        output_path = fixtures_dir / fixture["name"]
         print(f"  {fixture['name']}: {fixture['description']}")
         print(f"    (Use imagehub MCP to download: imagehub_download_image({fixture['image_id']}))")
 

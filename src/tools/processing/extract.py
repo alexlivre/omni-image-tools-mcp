@@ -18,6 +18,7 @@ async def extract_object(
     image_path: str,
     object_description: str,
     output_filename: str | None = None,
+    output_dir: str | None = None,
 ) -> dict[str, Any]:
     """Locate and crop an object from an image.
 
@@ -79,6 +80,16 @@ async def extract_object(
             "image_size": (img_width, img_height),
         }
 
+    bbox_area = (x2 - x1) * (y2 - y1)
+    img_area = img_width * img_height
+    if img_area > 0 and bbox_area / img_area > 0.95:
+        return {
+            "success": False,
+            "error": f"Could not locate '{object_description}' with confidence. Bounding box covers {bbox_area / img_area:.0%} of image (likely hallucination).",
+            "coordinates": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
+            "image_size": (img_width, img_height),
+        }
+
     cropped = img.crop((x1, y1, x2, y2))
     ext = Path(image_path).suffix if Path(image_path).suffix else ".jpg"
 
@@ -94,8 +105,11 @@ async def extract_object(
         safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", object_description)[:30]
         save_name = f"{safe_name}_{uuid.uuid4().hex[:6]}{ext}"
 
-    save_dir = Path(__file__).parent.parent.parent.parent / "test_images"
-    save_dir.mkdir(exist_ok=True)
+    if output_dir:
+        save_dir = Path(output_dir)
+    else:
+        save_dir = Path(__file__).parent.parent.parent.parent / "test_images"
+    save_dir.mkdir(parents=True, exist_ok=True)
     save_path = save_dir / save_name
     cropped.save(save_path)
 

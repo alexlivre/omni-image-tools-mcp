@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.providers import ProviderFactory
-from src.tools import ToolRegistry, register_all_tools, TOOL_SCHEMAS
+from src.tools import TOOL_SCHEMAS
 from src.utils import GPUResourceManager
 
 
@@ -65,7 +65,7 @@ def list_tools():
         print()
 
     print("Processing tools:")
-    processing_tools = ["prepare_image", "get_image_info", "crop_image", "convert_image_format"]
+    processing_tools = ["prepare_image", "get_image_info", "crop_image", "convert_image_format", "extract_object"]
     for name in processing_tools:
         schema = TOOL_SCHEMAS.get(name, {})
         desc = schema.get("description", "No description")
@@ -214,7 +214,7 @@ async def compare_images(args):
     from src.config import Config, ConfigError
 
     try:
-        config = Config.from_env()
+        Config.from_env()
     except ConfigError as e:
         print(f"Config error: {e.message}")
         return 1
@@ -330,6 +330,38 @@ async def crop_cmd(args):
         return 1
 
 
+async def extract_cmd(args):
+    """Locate and crop an object from an image using AI vision."""
+    if not os.path.exists(args.image):
+        print(f"Error: Image not found: {args.image}")
+        return 1
+
+    await verify_gpu_before_vision()
+
+    from src.tools.processing.extract import extract_object
+
+    try:
+        result = await extract_object(
+            args.image,
+            object_description=args.object,
+            output_filename=args.output,
+            output_dir=args.output_dir,
+        )
+        if result["success"]:
+            print(f"Object: {result['object_description']}")
+            print(f"Coordinates: {result['coordinates']}")
+            print(f"Extracted size: {result['extracted_size']}")
+            print(f"Original size: {result['original_size']}")
+            print(f"Saved to: {result['local_path']}")
+        else:
+            print(f"Error: {result.get('error', 'Unknown error')}")
+            return 1
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+
 async def convert_cmd(args):
     """Convert image format."""
     if not os.path.exists(args.image):
@@ -404,6 +436,16 @@ def main():
     compare_parser.add_argument("--compare-type", choices=["similarities", "differences", "both"], default="both", help="What to compare")
     compare_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
+    extract_parser = subparsers.add_parser(
+        "extract",
+        help="Locate and crop an object from an image using AI vision",
+    )
+    extract_parser.add_argument("--image", required=True, help="Path to image file")
+    extract_parser.add_argument("--object", required=True, help="Description of the object to extract (e.g., 'the red car', 'person on the left')")
+    extract_parser.add_argument("--output-dir", help="Directory to save cropped image (default: test_images/)")
+    extract_parser.add_argument("--output", help="Exact output filename (default: auto-generated)")
+    extract_parser.add_argument("--debug", action="store_true", help="Enable debug output")
+
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")
     info_parser.add_argument("--include-exif", action="store_true", default=True, help="Include EXIF metadata")
@@ -476,6 +518,9 @@ def main():
     if args.command == "compare":
         return asyncio.run(compare_images(args))
 
+    if args.command == "extract":
+        return asyncio.run(extract_cmd(args))
+
     if args.command == "info":
         return get_image_info(args)
 
@@ -531,7 +576,7 @@ async def benchmark_cmd(args):
 
             if provider_name in ["openrouter", "openai"]:
                 if not os.environ.get("OMNI_VISION_API_KEY"):
-                    print(f"  [SKIP] No API key configured")
+                    print("  [SKIP] No API key configured")
                     continue
 
             config = Config.from_env()
