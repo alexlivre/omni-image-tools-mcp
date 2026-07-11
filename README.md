@@ -36,19 +36,18 @@ Um servidor MCP que dá **visão computacional** para modelos de IA. Ele permite
 ## 🚀 Início Rápido
 
 ```bash
-# 1. Baixar e instalar
+# 1. Baixar e instalar (requer uv: https://docs.astral.sh/uv/)
 git clone https://github.com/alexlivre/omni-image-tools-mcp
 cd omni-image-tools-mcp
-python -m venv venv
-.\venv\Scripts\activate
-pip install -e .
+uv sync
+uv sync --extra dev
 
 # 2. Se for usar Ollama (grátis, local):
 set OMNI_VISION_PROVIDER=ollama
 set OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
 
 # 3. Testar
-python scripts/cli.py analyze --image foto.jpg --prompt "O que tem nesta imagem?"
+uv run python scripts/cli.py analyze --image foto.jpg --prompt "O que tem nesta imagem?"
 ```
 
 > 💡 **Dica:** Se quiser usar nuvem, veja a seção [Como configurar cada provedor](#-como-configurar-cada-provedor) mais abaixo.
@@ -92,7 +91,7 @@ python scripts/cli.py analyze --image foto.jpg --prompt "O que tem nesta imagem?
 Essa ferramenta é **inteligente**: você diz o que quer recortar e ela acha sozinha.
 
 ```bash
-python scripts/cli.py extract --image carro.jpg --object "license plate"
+uv run python scripts/cli.py extract --image carro.jpg --object "license plate"
 ```
 
 **O que acontece por dentro:**
@@ -155,7 +154,7 @@ Adicione no arquivo `~/.config/opencode/opencode.json`:
   "mcp": {
     "omni-image-tools": {
       "type": "local",
-      "command": ["C:\\caminho\\venv\\Scripts\\python.exe", "-m", "src.server"],
+      "command": ["C:\\caminho\\omni-image-tools-mcp\\.venv\\Scripts\\python.exe", "-m", "src.server"],
       "cwd": "C:\\caminho\\omni-image-tools-mcp",
       "environment": {
         "OMNI_VISION_PROVIDER": "ollama",
@@ -200,7 +199,7 @@ Requer [API key](https://openrouter.ai/keys).
 }
 ```
 
-> **Lembrete:** O `command` deve apontar para o `python.exe` da pasta `venv` do projeto. Depois de alterar, **reinicie o opencode**.
+> **Lembrete:** O `command` deve apontar para o `python.exe` da pasta `.venv` do projeto. Depois de alterar, **reinicie o opencode**.
 
 Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](https://cursor.sh).
 
@@ -213,8 +212,8 @@ Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](
 Quando você usa Ollama, o modelo fica carregado na memória da placa de vídeo. Se você pedir para carregar outro modelo, o sistema **automaticamente descarrega o anterior** antes de carregar o novo — evitando que a memória estoure.
 
 ```bash
-python scripts/cli.py gpu-status                    # Ver o que está carregado
-python scripts/cli.py gpu-status --unload-ollama modelo  # Forçar descarregar
+uv run python scripts/cli.py gpu-status                    # Ver o que está carregado
+uv run python scripts/cli.py gpu-status --unload-ollama modelo  # Forçar descarregar
 ```
 
 Isso tudo acontece **automagicamente** — você não precisa se preocupar.
