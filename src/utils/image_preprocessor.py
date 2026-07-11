@@ -82,6 +82,9 @@ def preprocess_to_bytes(image_path: str | Path) -> bytes:
     cache.write_bytes(data)
     logger.debug(
         "Preprocessed %s -> %s (%d bytes, longest_side=%d)",
-        original_path, cache, len(data), max(resized.size),
+        original_path,
+        cache,
+        len(data),
+        max(resized.size),
     )
     return data

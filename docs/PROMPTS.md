@@ -9,7 +9,6 @@ Prompts usados em cada tool do MCP.
 | Tool | Prompt | Linha |
 |------|--------|-------|
 | `analyze_image` | `"Describe this image in detail"` (default) | server.py:132 |
-| `describe_image` | `"Provide a comprehensive description of this image, including all visible elements, colors, composition, and any notable details"` | server.py:137 |
 | `identify_objects` | `"List all identifiable objects in this image. Format as a bulleted list"` | server.py:141 |
 | `read_text` | `"Extract and transcribe all visible text in this image. If no text is visible, say 'No text found'"` | server.py:145 |
 
@@ -22,7 +21,6 @@ Prompts usados em cada tool do MCP.
 | Tool | Descrição | Novos Parâmetros |
 |------|-----------|------------------|
 | `analyze_image` | Análise personalizável de imagem | `detail_level`, `focus` |
-| `describe_image` | Descrição completa do conteúdo | `description_type` |
 | `identify_objects` | Lista objetos identificáveis | `include_count`, `include_location`, `categories`, `min_confidence` |
 | `read_text` | Extrai texto visível (OCR) | `preserve_formatting`, `language_hint` |
 
@@ -69,27 +67,7 @@ analyze_image(
 )
 ```
 
-### 2. `describe_image`
-
-**Sinais:**
-- `description_type`: "technical" | "artistic" | "simple"
-
-**Prompt base + description_type:**
-| description_type | Prompt |
-|------------------|--------|
-| technical | "Provide a detailed technical description of this image, including dimensions, composition, colors, and technical aspects." |
-| artistic | "Describe this image from an artistic perspective, focusing on aesthetics, mood, and creative elements." |
-| simple | "Describe this image in simple, everyday language that anyone can understand." |
-
-**Parâmetros:**
-```python
-describe_image(
-    image_path: str,
-    description_type: str = "standard"  # "technical" | "artistic" | "simple"
-)
-```
-
-### 3. `identify_objects`
+### 2. `identify_objects`
 
 **Sinais:**
 - `include_count`: bool — quantos de cada objeto

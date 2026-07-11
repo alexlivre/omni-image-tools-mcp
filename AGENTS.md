@@ -48,5 +48,4 @@ mypy src/ --python-version 3.10
 
 - Ollama: 1 image per request (GPU memory limit). Cloud providers: unlimited
 - `extract_object` output goes to `test_images/` directory
-- `describe_image` tool exists in CLI but not in TOOL_SCHEMAS registry — may be WIP
 - Tests require a running provider for integration tests; unit tests in `tests/` work standalone

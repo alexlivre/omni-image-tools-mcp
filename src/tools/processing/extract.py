@@ -74,7 +74,7 @@ async def extract_object(
     if x2 - x1 < 5 or y2 - y1 < 5:
         return {
             "success": False,
-            "error": f"Extracted region too small ({x2-x1}x{y2-y1}px). Object may not be visible.",
+            "error": f"Extracted region too small ({x2 - x1}x{y2 - y1}px). Object may not be visible.",
             "coordinates": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
             "image_size": (img_width, img_height),
         }
@@ -84,10 +84,14 @@ async def extract_object(
 
     if output_filename:
         save_name = output_filename
-        if not save_name.endswith(ext) and not save_name.endswith(".png") and not save_name.endswith(".jpg"):
+        if (
+            not save_name.endswith(ext)
+            and not save_name.endswith(".png")
+            and not save_name.endswith(".jpg")
+        ):
             save_name += ext
     else:
-        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', object_description)[:30]
+        safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", object_description)[:30]
         save_name = f"{safe_name}_{uuid.uuid4().hex[:6]}{ext}"
 
     save_dir = Path(__file__).parent.parent.parent.parent / "test_images"
@@ -120,7 +124,7 @@ def _parse_coordinates(text: str) -> list[int] | None:
     if match:
         return [int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4))]
 
-    match = re.search(r'\[(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\]', text)
+    match = re.search(r"\[(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\]", text)
     if match:
         return [int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4))]
 

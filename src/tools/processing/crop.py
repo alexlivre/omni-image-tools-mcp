@@ -36,6 +36,7 @@ async def crop_image(
     cropped = img.crop((x, y, x + width, y + height))
 
     from io import BytesIO
+
     output = BytesIO()
     cropped.save(output, format=img.format or "PNG")
     output.seek(0)

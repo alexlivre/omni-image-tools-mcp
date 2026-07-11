@@ -11,11 +11,12 @@ from src.utils.image_preprocessor import (
     preprocess_to_bytes,
     CACHE_ROOT,
     MAX_LONGEST_SIDE,
-    KEEP_BELOW,
 )
 
 
-def _save_test_image(path: Path, size: tuple[int, int], mode: str = "RGB", color=(255, 0, 0)) -> None:
+def _save_test_image(
+    path: Path, size: tuple[int, int], mode: str = "RGB", color=(255, 0, 0)
+) -> None:
     img = Image.new(mode, size, color)
     img.save(path)
 
@@ -149,5 +150,6 @@ def test_missing_file_raises(tmp_path):
 
 def test_cache_directory_created_under_tempdir():
     import tempfile
+
     expected = Path(tempfile.gettempdir()) / "omni-image-tools" / "preprocessed"
     assert expected == CACHE_ROOT

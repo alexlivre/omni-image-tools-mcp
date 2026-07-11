@@ -17,5 +17,5 @@ __all__ = [
     "ProviderFactory",
     "ToolRegistry",
     "register_all_tools",
-    "main"
+    "main",
 ]

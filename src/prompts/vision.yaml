@@ -6,11 +6,6 @@ analyze_image:
   standard: "Provide a comprehensive description of this image including main elements, colors, and context."
   detailed: "Give an extremely detailed analysis of this image, describing every notable aspect, object, color, texture, and context."
 
-describe_image:
-  simple: "What is shown in this image? Give a simple, concise answer."
-  detailed: "Describe in detail what you see in this image, including all objects, their appearance, and the overall scene."
-  verbose: "Provide an exhaustive description of this image, covering every visible element, color, texture, spatial relationship, and contextual information."
-
 identify_objects:
   default: "Identify all objects in this image. For each object provide: name, approximate size relative to the image, and location (top-left, center, bottom-right, etc.)."
   with_count: "List all distinct objects in this image with counts. Format: [count] x [object name] - [location]"

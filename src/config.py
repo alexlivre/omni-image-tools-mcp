@@ -9,6 +9,8 @@ ProviderType = Literal["ollama", "openrouter", "openai"]
 
 class OllamaConfig(BaseModel):
     base_url: str = Field(default="http://localhost:11434")
+    # Lista intencionalmente estreita. Curada para os modelos
+    # documentados no README. Expandir via env: OLLAMA_ALLOWED_MODELS.
     allowed_models: list[str] = Field(default=["qwen3-vl:4b", "qwen3-vl:2b"])
     auto_pull: bool = Field(default=False)
 

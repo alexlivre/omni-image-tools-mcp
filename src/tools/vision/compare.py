@@ -81,7 +81,7 @@ async def _compare_sequential(
 
     for i, image_data in enumerate(image_datas):
         desc = await provider.analyze(image_data, analysis_prompt, None)
-        descriptions.append(f"Image {i+1}: {desc}")
+        descriptions.append(f"Image {i + 1}: {desc}")
 
     combined_descriptions = "\n\n".join(descriptions)
 
@@ -93,10 +93,6 @@ Based on these descriptions, {base_prompt}
 
 Provide a clear, structured comparison."""
 
-    comparison_result = await provider.analyze(
-        image_datas[0],
-        comparison_prompt,
-        None
-    )
+    comparison_result = await provider.analyze(None, comparison_prompt, None)
 
     return comparison_result

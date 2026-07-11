@@ -32,8 +32,10 @@ async def test_analyze_image_sends_preprocessed_bytes(tmp_path):
             captured["format"] = im.format
         return "ok"
 
-    with patch("src.tools.vision.analyze.ProviderFactory.get") as factory, \
-         patch("src.tools.vision.analyze.get_config") as cfg:
+    with (
+        patch("src.tools.vision.analyze.ProviderFactory.get") as factory,
+        patch("src.tools.vision.analyze.get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -60,8 +62,10 @@ async def test_read_text_sends_preprocessed_bytes(tmp_path):
         return "text"
 
     read_text_module = importlib.import_module(read_text.__module__)
-    with patch.object(read_text_module.ProviderFactory, "get") as factory, \
-         patch.object(read_text_module, "get_config") as cfg:
+    with (
+        patch.object(read_text_module.ProviderFactory, "get") as factory,
+        patch.object(read_text_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -85,8 +89,10 @@ async def test_identify_objects_sends_preprocessed_bytes(tmp_path):
 
     import src.tools.vision.identify as identify_module
 
-    with patch.object(identify_module, "ProviderFactory") as factory_cls, \
-         patch.object(identify_module, "get_config") as cfg:
+    with (
+        patch.object(identify_module, "ProviderFactory") as factory_cls,
+        patch.object(identify_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -112,8 +118,10 @@ async def test_compare_images_sends_all_preprocessed(tmp_path):
 
     import src.tools.vision.compare as compare_module
 
-    with patch.object(compare_module, "ProviderFactory") as factory_cls, \
-         patch.object(compare_module, "get_config") as cfg:
+    with (
+        patch.object(compare_module, "ProviderFactory") as factory_cls,
+        patch.object(compare_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(compare=fake_compare)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "openrouter"
@@ -140,8 +148,10 @@ async def test_extract_object_preprocesses_for_vision_but_crops_original(tmp_pat
 
     import src.tools.processing.extract as extract_module
 
-    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
-         patch.object(extract_module, "get_config") as cfg:
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"

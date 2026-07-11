@@ -13,15 +13,15 @@ class VisionProvider(ABC):
     @abstractmethod
     async def analyze(
         self,
-        image_data: bytes,
-        prompt: str,
+        image_data: bytes | None = None,
+        prompt: str = "",
         model: str | None = None,
     ) -> str:
         """
         Analyze an image with a custom prompt.
 
         Args:
-            image_data: Raw image bytes
+            image_data: Raw image bytes (None for text-only prompts)
             prompt: The prompt/question about the image
             model: Optional model override
 

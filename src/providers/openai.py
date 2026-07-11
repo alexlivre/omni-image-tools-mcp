@@ -23,48 +23,44 @@ class OpenAIProvider(VisionProvider):
 
     async def analyze(
         self,
-        image_data: bytes,
-        prompt: str,
+        image_data: bytes | None = None,
+        prompt: str = "",
         model: str | None = None,
     ) -> str:
         """Analyze image using OpenAI API."""
         model = model or self.default_model
-
-        is_valid, error_msg = self.validate_image(image_data)
-        if not is_valid:
-            raise ValueError(error_msg)
-
-        image_b64 = base64.b64encode(image_data).decode("utf-8")
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
 
+        content = [{"type": "text", "text": prompt}]
+        if image_data is not None:
+            is_valid, error_msg = self.validate_image(image_data)
+            if not is_valid:
+                raise ValueError(error_msg)
+            image_b64 = base64.b64encode(image_data).decode("utf-8")
+            content.append(
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+            )
+
         payload = {
             "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
-                    ],
-                }
-            ],
+            "messages": [{"role": "user", "content": content}],
         }
 
         if self.debug:
-            image_size_kb = len(image_data) / 1024
-            print(f"\n{'='*60}")
-            print(f"DEBUG MODE - OpenAI Request")
-            print(f"{'='*60}")
-            print(f"Endpoint: https://api.openai.com/v1/chat/completions")
+            print(f"\n{'=' * 60}")
+            print("DEBUG MODE - OpenAI Request")
+            print(f"{'=' * 60}")
+            print("Endpoint: https://api.openai.com/v1/chat/completions")
             print(f"Model: {model}")
-            print(f"Image size: {image_size_kb:.1f} KB")
+            if image_data:
+                print(f"Image size: {len(image_data) / 1024:.1f} KB")
             print(f"Prompt length: {len(prompt)} chars")
             print(f"Timeout: {self.timeout}s")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
         start_time = time.time()
 
@@ -78,9 +74,9 @@ class OpenAIProvider(VisionProvider):
                 elapsed = time.time() - start_time
 
                 if self.debug:
-                    print(f"\n{'='*60}")
-                    print(f"DEBUG MODE - OpenAI Response")
-                    print(f"{'='*60}")
+                    print(f"\n{'=' * 60}")
+                    print("DEBUG MODE - OpenAI Response")
+                    print(f"{'=' * 60}")
                     print(f"Status: {response.status_code}")
                     print(f"Response time: {elapsed:.2f}s")
 
@@ -88,7 +84,7 @@ class OpenAIProvider(VisionProvider):
                     error_text = await response.text()
                     if self.debug:
                         print(f"Error: {error_text}")
-                        print(f"{'='*60}\n")
+                        print(f"{'=' * 60}\n")
                     raise httpx.HTTPError(error_text)
 
                 result = response.json()
@@ -96,9 +92,13 @@ class OpenAIProvider(VisionProvider):
 
                 if self.debug:
                     print(f"Response length: {len(response_text)} chars")
-                    print(f"\nResponse content:")
-                    print(f"  {response_text[:200]}..." if len(response_text) > 200 else f"  {response_text}")
-                    print(f"{'='*60}\n")
+                    print("\nResponse content:")
+                    print(
+                        f"  {response_text[:200]}..."
+                        if len(response_text) > 200
+                        else f"  {response_text}"
+                    )
+                    print(f"{'=' * 60}\n")
 
                 return response_text
 
@@ -118,7 +118,9 @@ class OpenAIProvider(VisionProvider):
         image_contents = []
         for img_data in image_datas:
             image_b64 = base64.b64encode(img_data).decode("utf-8")
-            image_contents.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}})
+            image_contents.append(
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+            )
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -139,11 +141,11 @@ class OpenAIProvider(VisionProvider):
         }
 
         if self.debug:
-            print(f"\n{'='*60}")
-            print(f"DEBUG MODE - OpenAI Compare Request")
-            print(f"{'='*60}")
+            print(f"\n{'=' * 60}")
+            print("DEBUG MODE - OpenAI Compare Request")
+            print(f"{'=' * 60}")
             print(f"Model: {model}")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
         start_time = time.time()
 

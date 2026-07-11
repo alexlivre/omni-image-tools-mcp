@@ -9,7 +9,6 @@ import asyncio
 import os
 import sys
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 import mcp.server.stdio
@@ -18,14 +17,12 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
 from .config import Config, ConfigError
-from .providers import ProviderFactory
 from .tools import register_all_tools, TOOL_SCHEMAS
 from .utils import GPUResourceManager
 from .tools.system.provider_info import get_provider_info
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -53,7 +50,7 @@ class OmniImageToolsServer:
                     f"({provider_info.get('type', '?')})"
                     f"\n📷 Image limit: {provider_info.get('image_limit_per_request', 'no limit') or 'no limit'} per request"
                 )
-                if provider_info.get('warnings', {}).get('local'):
+                if provider_info.get("warnings", {}).get("local"):
                     provider_suffix += f"\n{provider_info['warnings']['local']}"
             except Exception:
                 provider_suffix = ""
@@ -66,17 +63,18 @@ class OmniImageToolsServer:
                 if tool_name not in ("get_provider_info",):
                     description += provider_suffix
 
-                tools.append(types.Tool(
-                    name=schema.get("name", tool_name),
-                    description=description,
-                    inputSchema=input_schema
-                ))
+                tools.append(
+                    types.Tool(
+                        name=schema.get("name", tool_name),
+                        description=description,
+                        inputSchema=input_schema,
+                    )
+                )
             return tools
 
         @self.server.call_tool()
         async def handle_call_tool(
-            name: str,
-            arguments: Optional[Dict[str, Any]] = None
+            name: str, arguments: Optional[Dict[str, Any]] = None
         ) -> Sequence[types.TextContent | types.ImageContent | types.EmbeddedResource]:
             """Handle tool execution"""
             try:
@@ -88,6 +86,7 @@ class OmniImageToolsServer:
                     raise ValueError(f"Image not found: {image_path}")
 
                 from .tools import ToolRegistry
+
                 tool = ToolRegistry.get_tool(name)
 
                 if not tool:
@@ -135,8 +134,8 @@ class OmniImageToolsServer:
                     capabilities=self.server.get_capabilities(
                         notification_options=NotificationOptions(),
                         experimental_capabilities={},
-                    )
-                )
+                    ),
+                ),
             )
 
 

@@ -80,7 +80,7 @@
     - herda de tools/vision/*.py e tools/processing/*.py
 
 2.4 Definir schemas para todas tools
-    - analyze_image, describe_image, identify_objects, read_text
+    - analyze_image, identify_objects, read_text
     - compare_images
     - prepare_image, get_image_info, crop_image, convert_image_format
 
@@ -130,10 +130,6 @@
 4.1 Implementar analyze_image
     - tools/vision/analyze.py
     - CLI: python scripts/cli.py analyze
-
-4.2 Implementar describe_image
-    - tools/vision/describe.py
-    - CLI: python scripts/cli.py describe
 
 4.3 Implementar identify_objects
     - tools/vision/identify.py
@@ -310,7 +306,7 @@ python scripts/cli.py benchmark --image tests/fixtures/simple.jpg --providers al
   - OpenRouter also tested successfully
   - --debug mode implemented
 - [x] Fase 4: Vision MVP (2026-05-31) - ✅ FULL COMPLETE
-  - Implemented analyze_image, describe_image, identify_objects, read_text
+  - Implemented analyze_image, identify_objects, read_text
   - All tools integrated with ToolRegistry
   - Tested via CLI with LM Studio (qwen3-vl-4b)
 - [x] Fase 5: Vision v2 (2026-05-31) - ✅ FULL COMPLETE

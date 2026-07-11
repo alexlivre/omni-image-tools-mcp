@@ -96,7 +96,7 @@ of concerns between services."
 """
 User: "What's in this image? https://example.com/photos/mountain-landscape.jpg"
 
-Assistant uses tool: describe_image
+Assistant uses tool: analyze_image
 Arguments: {
     "image_path": "https://example.com/photos/mountain-landscape.jpg"
 }

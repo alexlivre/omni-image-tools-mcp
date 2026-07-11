@@ -23,7 +23,9 @@ class GPUResourceManager:
         """Get list of currently loaded models in Ollama."""
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-                async with session.get(f"{base_url}{GPUResourceManager.OLLAMA_PS_ENDPOINT}") as response:
+                async with session.get(
+                    f"{base_url}{GPUResourceManager.OLLAMA_PS_ENDPOINT}"
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         models = data.get("models", [])
@@ -35,15 +37,13 @@ class GPUResourceManager:
 
     @staticmethod
     async def unload_ollama_model(
-        model_name: str,
-        base_url: str = "http://localhost:11434"
+        model_name: str, base_url: str = "http://localhost:11434"
     ) -> bool:
         """Unload a specific model from Ollama by setting keep_alive to 0."""
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
                 async with session.post(
-                    f"{base_url}/api/chat",
-                    json={"model": model_name, "keep_alive": 0}
+                    f"{base_url}/api/chat", json={"model": model_name, "keep_alive": 0}
                 ) as response:
                     if response.status == 200:
                         logger.info(f"Ollama model unloaded: {model_name}")
@@ -82,7 +82,9 @@ class GPUResourceManager:
         else:
             current_models = []
 
-        current_model_names = [m if isinstance(m, str) else m.get("name", "?") for m in current_models]
+        current_model_names = [
+            m if isinstance(m, str) else m.get("name", "?") for m in current_models
+        ]
 
         if model and model in current_model_names:
             same_model_loaded = True
@@ -100,9 +102,7 @@ class GPUResourceManager:
             status = "unloaded"
 
         if same_model_loaded:
-            warnings.append(
-                f"Ollama already has model '{model}' loaded. Reusing existing model."
-            )
+            warnings.append(f"Ollama already has model '{model}' loaded. Reusing existing model.")
 
         for w in warnings:
             logger.warning(w)

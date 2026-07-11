@@ -142,6 +142,7 @@ set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
 | `OMNI_VISION_API_KEY` | Só nuvem | — | Sua chave do provedor |
 | `OMNI_VISION_DEFAULT_MODEL` | ❌ Não | Varia | Qual modelo usar |
 | `OMNI_VISION_TIMEOUT` | ❌ Não | 120s | Tempo máximo de espera |
+| `OLLAMA_ALLOWED_MODELS` | ❌ Não | `qwen3-vl:4b,qwen3-vl:2b` | Modelos permitidos no Ollama (CSV) |
 
 ---
 

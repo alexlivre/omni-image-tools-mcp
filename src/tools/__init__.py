@@ -3,8 +3,6 @@
 import importlib
 from typing import Any, Callable
 
-from ..providers import ProviderFactory
-
 
 TOOL_SCHEMAS = {
     "analyze_image": {
@@ -287,10 +285,7 @@ class ToolRegistry:
     @classmethod
     def list_tools(cls) -> list[dict[str, Any]]:
         """List all registered tools."""
-        return [
-            {"name": name, "schema": tool["schema"]}
-            for name, tool in cls._tools.items()
-        ]
+        return [{"name": name, "schema": tool["schema"]} for name, tool in cls._tools.items()]
 
     @classmethod
     def get_all_schemas(cls) -> list[dict[str, Any]]:
@@ -302,15 +297,18 @@ def register_all_tools() -> None:
     """Register all tools from schemas."""
     tool_functions = {
         "analyze_image": importlib.import_module("src.tools.vision.analyze").analyze_image,
-
         "identify_objects": importlib.import_module("src.tools.vision.identify").identify_objects,
         "read_text": importlib.import_module("src.tools.vision.read_text").read_text,
         "compare_images": importlib.import_module("src.tools.vision.compare").compare_images,
         "prepare_image": importlib.import_module("src.tools.processing.prepare").prepare_image,
         "get_image_info": importlib.import_module("src.tools.processing.info").get_image_info,
         "crop_image": importlib.import_module("src.tools.processing.crop").crop_image,
-        "convert_image_format": importlib.import_module("src.tools.processing.convert").convert_image_format,
-        "get_provider_info": importlib.import_module("src.tools.system.provider_info").get_provider_info,
+        "convert_image_format": importlib.import_module(
+            "src.tools.processing.convert"
+        ).convert_image_format,
+        "get_provider_info": importlib.import_module(
+            "src.tools.system.provider_info"
+        ).get_provider_info,
         "download_image": importlib.import_module("src.tools.processing.download").download_image,
         "extract_object": importlib.import_module("src.tools.processing.extract").extract_object,
     }
@@ -318,10 +316,13 @@ def register_all_tools() -> None:
     for tool_name, tool_schema in TOOL_SCHEMAS.items():
         func = tool_functions.get(tool_name)
         if func is None:
+
             def create_placeholder(name: str):
                 async def placeholder(**kwargs):
                     return {"error": f"Tool '{name}' not yet implemented"}
+
                 return placeholder
+
             func = create_placeholder(tool_name)
 
         ToolRegistry.register(

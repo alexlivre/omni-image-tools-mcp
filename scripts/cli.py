@@ -16,49 +16,30 @@ from src.utils import GPUResourceManager
 
 
 async def check_gpu_status():
-    """Check and display GPU model status for both Ollama and LM Studio."""
+    """Check and display GPU model status for Ollama."""
     print("\n" + "=" * 50)
-    print("CHECKING GPU MODEL STATUS (DUAL PROVIDER VERIFICATION)")
+    print("OLLAMA GPU MODEL STATUS")
     print("=" * 50)
 
     status = await GPUResourceManager.check_memory_collision()
 
-    print(f"\nOllama loaded: {len(status['ollama_models'])} model(s)")
-    for m in status['ollama_models']:
-        print(f"  - {m}")
-
-    print(f"\nLM Studio loaded: {len(status['lmstudio_models'])} model(s)")
-    for m in status['lmstudio_models']:
-        print(f"  - {m.get('display_name', m.get('key'))} (id: {m.get('instance_id')})")
-
-    print(f"\nTotal: {status['total_count']} model(s)")
-
-    if status['collision_detected']:
-        print("\n[!] COLLISION WARNING: Models loaded in BOTH providers!")
-        print("   This may exceed GPU memory on residential GPUs.")
-        print("   Consider unloading one provider.")
-    elif status['total_count'] > 0:
-        print("\n[OK] GPU memory check passed")
+    if status['ollama_models']:
+        print(f"\nOllama ({len(status['ollama_models'])} loaded):")
+        for m in status['ollama_models']:
+            print(f"  - {m}")
     else:
-        print("\n[OK] No models loaded")
+        print("\nOllama: No models loaded")
 
     print("=" * 50 + "\n")
     return status
 
 
 async def verify_gpu_before_vision():
-    """Verify GPU status before vision operations. Shows warning if collision detected."""
+    """Verify GPU status before vision operations."""
     status = await GPUResourceManager.check_memory_collision()
 
-    if status['collision_detected']:
-        print("\n[!] GPU MEMORY WARNING [!]")
-        print(f"   Ollama: {status['ollama_models']}")
-        print(f"   LM Studio: {[m.get('key') for m in status['lmstudio_models']]}")
-        print("   Multiple models loaded - may cause OOM on residential GPUs\n")
-    elif status['total_count'] > 0:
-        provider = os.environ.get("OMNI_VISION_PROVIDER", "unknown")
-        models = status['ollama_models'] if provider == "ollama" else [m.get('key') for m in status['lmstudio_models']]
-        print(f"\n[INFO] Using {provider}: {models}\n")
+    if status['ollama_models']:
+        print(f"\n[INFO] Ollama: {status['ollama_models']}\n")
 
     return status
 
@@ -75,7 +56,7 @@ def list_providers():
 def list_tools():
     """List available tools with schemas."""
     print("Vision tools:")
-    vision_tools = ["analyze_image", "describe_image", "identify_objects", "read_text", "compare_images"]
+    vision_tools = ["analyze_image", "identify_objects", "read_text", "compare_images"]
     for name in vision_tools:
         schema = TOOL_SCHEMAS.get(name, {})
         desc = schema.get("description", "No description")
@@ -126,8 +107,8 @@ async def analyze_image(args):
     debug = getattr(args, 'debug', False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
-    with open(args.image, "rb") as f:
-        image_data = f.read()
+    from src.utils import preprocess_to_bytes
+    image_data = preprocess_to_bytes(args.image)
 
     prompt = args.prompt
     if args.detail_level:
@@ -137,41 +118,6 @@ async def analyze_image(args):
     try:
         result = await provider.analyze(image_data, prompt, args.model)
         print("Result:")
-        print(result)
-        return 0
-    except Exception as e:
-        print(f"Error: {e}")
-        return 1
-
-
-async def describe_image(args):
-    """Describe an image."""
-    if not os.path.exists(args.image):
-        print(f"Error: Image not found: {args.image}")
-        return 1
-
-    await verify_gpu_before_vision()
-
-    from src.config import Config, ConfigError
-
-    try:
-        config = Config.from_env()
-    except ConfigError as e:
-        print(f"Config error: {e.message}")
-        return 1
-
-    debug = getattr(args, 'debug', False)
-    provider = ProviderFactory.get(config.provider, config, debug=debug)
-
-    with open(args.image, "rb") as f:
-        image_data = f.read()
-
-    from src.prompts import get_vision_prompt
-    prompt = get_vision_prompt("describe_image", args.type)
-
-    try:
-        result = await provider.analyze(image_data, prompt)
-        print("Description:")
         print(result)
         return 0
     except Exception as e:
@@ -198,8 +144,8 @@ async def identify_objects(args):
     debug = getattr(args, 'debug', False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
-    with open(args.image, "rb") as f:
-        image_data = f.read()
+    from src.utils import preprocess_to_bytes
+    image_data = preprocess_to_bytes(args.image)
 
     prompt = "Identify all objects in this image. List each object you see."
 
@@ -232,8 +178,8 @@ async def read_text(args):
     debug = getattr(args, 'debug', False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
-    with open(args.image, "rb") as f:
-        image_data = f.read()
+    from src.utils import preprocess_to_bytes
+    image_data = preprocess_to_bytes(args.image)
 
     if args.preserve_formatting:
         prompt = "Extract all text from this image, preserving the layout and formatting."
@@ -426,9 +372,8 @@ def main():
     providers_parser = subparsers.add_parser("providers", help="List providers")
     providers_parser.add_argument("action", nargs="?", choices=["list"], default="list")
 
-    gpu_parser = subparsers.add_parser("gpu-status", help="Check GPU memory status (Ollama + LM Studio)")
+    gpu_parser = subparsers.add_parser("gpu-status", help="Check GPU memory status (Ollama)")
     gpu_parser.add_argument("--unload-ollama", metavar="MODEL", help="Unload a specific model from Ollama")
-    gpu_parser.add_argument("--unload-lmstudio", metavar="INSTANCE_ID", help="Unload a specific model from LM Studio")
 
     tools_parser = subparsers.add_parser("tools", help="List tools")
     tools_parser.add_argument("action", nargs="?", choices=["list"], default="list")
@@ -441,15 +386,9 @@ def main():
     analyze_parser.add_argument("--detail-level", choices=["brief", "standard", "detailed"], help="Detail level")
     analyze_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
-    describe_parser = subparsers.add_parser("describe", help="Describe an image")
-    describe_parser.add_argument("--image", required=True, help="Path to image file")
-    describe_parser.add_argument("--type", choices=["simple", "detailed", "verbose"], default="detailed")
-    describe_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
-
     identify_parser = subparsers.add_parser("identify", help="Identify objects in an image")
     identify_parser.add_argument("--image", required=True, help="Path to image file")
     identify_parser.add_argument("--include-count", action="store_true", help="Include object counts")
-    identify_parser.add_argument("--include-location", action="store_true", help="Include object locations")
     identify_parser.add_argument("--categories", help="Filter by categories (comma-separated)")
     identify_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
 
@@ -515,15 +454,6 @@ def main():
                 print("[FAIL] Failed to unload model")
             return 0 if success else 1
 
-        if args.unload_lmstudio:
-            print(f"Unloading LM Studio model: {args.unload_lmstudio}")
-            success = asyncio.run(GPUResourceManager.unload_lmstudio_model(args.unload_lmstudio))
-            if success:
-                print("[OK] Model unloaded")
-            else:
-                print("[FAIL] Failed to unload model")
-            return 0 if success else 1
-
         asyncio.run(check_gpu_status())
         return 0
 
@@ -536,9 +466,6 @@ def main():
 
     if args.command == "analyze":
         return asyncio.run(analyze_image(args))
-
-    if args.command == "describe":
-        return asyncio.run(describe_image(args))
 
     if args.command == "identify":
         return asyncio.run(identify_objects(args))

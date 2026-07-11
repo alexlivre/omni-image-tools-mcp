@@ -24,52 +24,59 @@ class OllamaProvider(VisionProvider):
     def validate_model(self, model: str | None) -> str:
         """Validate and return the model to use."""
         if model is None:
-            model = self.config.default_model or self.allowed_models[0] if self.allowed_models else "qwen3-vl:4b"
+            model = (
+                self.config.default_model or self.allowed_models[0]
+                if self.allowed_models
+                else "qwen3-vl:4b"
+            )
 
         if model not in self.allowed_models:
-            raise ValueError(
-                f"Model '{model}' not in allowed list: {self.allowed_models}"
-            )
+            raise ValueError(f"Model '{model}' not in allowed list: {self.allowed_models}")
 
         return model
 
     async def analyze(
         self,
-        image_data: bytes,
-        prompt: str,
+        image_data: bytes | None = None,
+        prompt: str = "",
         model: str | None = None,
     ) -> str:
         """Analyze image using Ollama API."""
         model = self.validate_model(model)
 
-        is_valid, error_msg = self.validate_image(image_data)
-        if not is_valid:
-            raise ValueError(error_msg)
-
-        image_b64 = base64.b64encode(image_data).decode("utf-8")
-        image_size_kb = len(image_data) / 1024
-
         payload = {
             "model": model,
             "prompt": prompt,
-            "images": [image_b64],
             "stream": False,
         }
 
+        if image_data is not None:
+            is_valid, error_msg = self.validate_image(image_data)
+            if not is_valid:
+                raise ValueError(error_msg)
+            image_b64 = base64.b64encode(image_data).decode("utf-8")
+            payload["images"] = [image_b64]
+
+        image_size_kb = len(image_data) / 1024 if image_data else 0
+
         if self.debug:
-            print(f"\n{'='*60}")
-            print(f"DEBUG MODE - Ollama Request")
-            print(f"{'='*60}")
+            print(f"\n{'=' * 60}")
+            print("DEBUG MODE - Ollama Request")
+            print(f"{'=' * 60}")
             print(f"Endpoint: {self.base_url}/api/generate")
             print(f"Model: {model}")
             print(f"Image size: {image_size_kb:.1f} KB")
             print(f"Prompt length: {len(prompt)} chars")
             print(f"Timeout: {self.timeout.total}s")
-            print(f"\nRequest payload:")
+            print("\nRequest payload:")
             print(f"  model: {payload['model']}")
-            print(f"  prompt: {payload['prompt'][:100]}..." if len(payload['prompt']) > 100 else f"  prompt: {payload['prompt']}")
+            print(
+                f"  prompt: {payload['prompt'][:100]}..."
+                if len(payload["prompt"]) > 100
+                else f"  prompt: {payload['prompt']}"
+            )
             print(f"  images: [base64 encoded, {len(image_b64)} chars]")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
         start_time = time.time()
 
@@ -82,9 +89,9 @@ class OllamaProvider(VisionProvider):
                     elapsed = time.time() - start_time
 
                     if self.debug:
-                        print(f"\n{'='*60}")
-                        print(f"DEBUG MODE - Ollama Response")
-                        print(f"{'='*60}")
+                        print(f"\n{'=' * 60}")
+                        print("DEBUG MODE - Ollama Response")
+                        print(f"{'=' * 60}")
                         print(f"Status: {response.status}")
                         print(f"Response time: {elapsed:.2f}s")
 
@@ -92,7 +99,7 @@ class OllamaProvider(VisionProvider):
                         error_text = await response.text()
                         if self.debug:
                             print(f"Error: {error_text}")
-                            print(f"{'='*60}\n")
+                            print(f"{'=' * 60}\n")
                         raise aiohttp.ClientResponseError(
                             response.request_info,
                             response.history,
@@ -105,9 +112,13 @@ class OllamaProvider(VisionProvider):
 
                     if self.debug:
                         print(f"Response length: {len(response_text)} chars")
-                        print(f"\nResponse content:")
-                        print(f"  {response_text[:200]}..." if len(response_text) > 200 else f"  {response_text}")
-                        print(f"{'='*60}\n")
+                        print("\nResponse content:")
+                        print(
+                            f"  {response_text[:200]}..."
+                            if len(response_text) > 200
+                            else f"  {response_text}"
+                        )
+                        print(f"{'=' * 60}\n")
 
                     return response_text
 
@@ -134,13 +145,13 @@ class OllamaProvider(VisionProvider):
         }
 
         if self.debug:
-            print(f"\n{'='*60}")
-            print(f"DEBUG MODE - Ollama Compare Request")
-            print(f"{'='*60}")
+            print(f"\n{'=' * 60}")
+            print("DEBUG MODE - Ollama Compare Request")
+            print(f"{'=' * 60}")
             print(f"Model: {model}")
             for i, b64 in enumerate(images_b64):
-                print(f"  Image {i+1}: {len(b64)} chars")
-            print(f"{'='*60}\n")
+                print(f"  Image {i + 1}: {len(b64)} chars")
+            print(f"{'=' * 60}\n")
 
         start_time = time.time()
 

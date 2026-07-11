@@ -19,7 +19,6 @@ async def download_image(url: str) -> dict[str, Any]:
     Returns:
         Dict with local path, format, size info
     """
-    import re
     import uuid
 
     try:

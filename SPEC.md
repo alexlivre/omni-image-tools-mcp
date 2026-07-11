@@ -33,8 +33,7 @@ Detalhes: ver `docs/PROCESSING.md`.
 
 | Tool | Descrição | Parâmetros |
 |------|-----------|-----------|
-| `analyze_image` | Análise personalizável de imagem | `image_path`, `prompt`, `model`, `detail_level`, `focus` |
-| `describe_image` | Descrição completa do conteúdo | `image_path`, `description_type` |
+| `analyze_image` | Análise personalizável de imagem | `image_path`, `prompt`, `model`, `detail_level` |
 | `identify_objects` | Lista objetos identificáveis | `image_path`, `include_count`, `include_location`, `categories`, `min_confidence` |
 | `read_text` | Extrai texto visível (OCR) | `image_path`, `preserve_formatting`, `language_hint` |
 
@@ -95,12 +94,8 @@ Detalhes: ver `docs/PROCESSING.md`.
 |--------|---------|-------|
 | `qwen3-vl:4b` | 3.3GB | ✅ **Default** |
 | `qwen3-vl:2b` | 1.9GB | Leve |
-| `qwen3-vl:8b` | 6.1GB | Mais capaz |
-| `moondream` | ~1GB | Mínimo |
-| `moondream2` | ~1GB | Atualização |
-| `llava:7b` | ~7GB | |
-| `llava:13b` | ~13GB | |
-| `bakllava` | ~4GB | |
+
+> Modelos adicionais podem ser ativados via env `OLLAMA_ALLOWED_MODELS`, mas não fazem parte do contrato padrão do projeto.
 
 ### Config Ollama
 

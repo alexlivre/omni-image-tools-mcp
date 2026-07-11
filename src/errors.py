@@ -1,6 +1,3 @@
-from typing import Any
-
-
 class ConfigError(Exception):
     code: str = "CONFIG_ERROR"
     retryable: bool = False

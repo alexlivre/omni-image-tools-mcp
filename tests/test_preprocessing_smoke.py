@@ -26,13 +26,16 @@ async def test_complex_fixture_succeeds_after_preprocess():
 
     import src.tools.vision.analyze as analyze_module
 
-    with patch.object(analyze_module, "ProviderFactory") as factory_cls, \
-         patch.object(analyze_module, "get_config") as cfg:
+    with (
+        patch.object(analyze_module, "ProviderFactory") as factory_cls,
+        patch.object(analyze_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
         cfg.return_value.default_model = "qwen3-vl:4b"
         from src.tools.vision.analyze import analyze_image
+
         result = await analyze_image(image_path=str(src), prompt="describe")
 
     assert result["success"] is True

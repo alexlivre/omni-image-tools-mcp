@@ -33,7 +33,7 @@ omni-image-tools-mcp/
 
 ### `server.py`
 - MCP server usando `mcp.server.stdio`
-- Registra as tools: `analyze_image`, `describe_image`, `identify_objects`, `read_text`
+- Registra as tools: `analyze_image`, `identify_objects`, `read_text`
 - Orquestra: image_handler → providers
 
 ### `config.py`

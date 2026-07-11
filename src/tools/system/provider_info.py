@@ -15,7 +15,6 @@ def get_provider_info() -> dict[str, Any]:
 
     provider = config.provider
     is_local = provider == "ollama"
-    is_online = provider in ["openrouter", "openai"]
 
     info = {
         "provider": provider,
@@ -52,7 +51,6 @@ def _get_provider_description(provider: str, is_local: bool) -> str:
     """Get human-readable provider description."""
     descriptions = {
         "ollama": "Ollama local vision model",
-
         "openrouter": "OpenRouter cloud API",
         "openai": "OpenAI cloud API",
     }
