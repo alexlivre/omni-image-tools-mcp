@@ -1,4 +1,4 @@
-from src.utils.result_cache import _CACHE_ENABLED, cached, cache_result, make_key
+from src.utils.result_cache import _CACHE_ENABLED, cached, cache_result, make_key  # noqa: F401
 
 
 def test_cache_roundtrip_when_enabled(monkeypatch):
