@@ -61,6 +61,7 @@ class OmniImageToolsServer:
                     title=schema.get("title"),
                     description=schema.get("description", ""),
                     inputSchema=schema.get("inputSchema", {}),
+                    outputSchema=schema.get("outputSchema"),
                     annotations=types.ToolAnnotations(**schema["annotations"])
                     if schema.get("annotations")
                     else None,

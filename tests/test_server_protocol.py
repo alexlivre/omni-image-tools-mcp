@@ -105,3 +105,10 @@ class TestPathValidation:
         b.write_bytes(b"x")
         with pytest.raises(FileNotFoundError):
             _validate_image_paths({"image_paths": [str(a), str(tmp_path / "missing.jpg")]})
+
+
+def test_deterministic_tools_have_output_schema():
+    for name in ("get_image_info", "crop_image", "convert_image_format",
+                 "prepare_image", "download_image", "extract_object",
+                 "get_provider_info"):
+        assert TOOL_SCHEMAS[name].get("outputSchema"), f"{name} missing outputSchema"
