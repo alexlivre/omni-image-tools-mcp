@@ -20,8 +20,12 @@ class FakeCloudProvider:
 
 
 def test_provider_info_local():
-    with patch("src.tools.system.provider_info.get_config", return_value=FakeConfig()), \
-         patch("src.tools.system.provider_info.ProviderFactory.get", return_value=FakeLocalProvider()):
+    with (
+        patch("src.tools.system.provider_info.get_config", return_value=FakeConfig()),
+        patch(
+            "src.tools.system.provider_info.ProviderFactory.get", return_value=FakeLocalProvider()
+        ),
+    ):
         info = get_provider_info()
     assert info["success"] is True
     assert info["type"] == "local"
@@ -31,8 +35,12 @@ def test_provider_info_local():
 def test_provider_info_cloud():
     cfg = FakeConfig()
     cfg.provider = "openrouter"
-    with patch("src.tools.system.provider_info.get_config", return_value=cfg), \
-         patch("src.tools.system.provider_info.ProviderFactory.get", return_value=FakeCloudProvider()):
+    with (
+        patch("src.tools.system.provider_info.get_config", return_value=cfg),
+        patch(
+            "src.tools.system.provider_info.ProviderFactory.get", return_value=FakeCloudProvider()
+        ),
+    ):
         info = get_provider_info()
     assert info["type"] == "online"
     assert info["image_limit_per_request"] is None
