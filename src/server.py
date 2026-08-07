@@ -130,9 +130,10 @@ class OmniImageToolsServer:
             )
 
 
-def _validate_image_paths(arguments: dict[str, Any]) -> None:
+def _validate_image_paths(arguments: dict[str, Any], allowed_roots: list | None = None) -> None:
     """Resolve and validate every image path argument (anti path traversal)."""
-    allowed_roots = _allowed_roots()
+    if allowed_roots is None:
+        allowed_roots = _allowed_roots()
     targets = []
     if isinstance(arguments.get("image_path"), str):
         targets.append(arguments["image_path"])

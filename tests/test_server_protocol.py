@@ -106,6 +106,21 @@ class TestPathValidation:
         with pytest.raises(FileNotFoundError):
             _validate_image_paths({"image_paths": [str(a), str(tmp_path / "missing.jpg")]})
 
+    def test_validate_image_paths_blocks_sandbox_escape(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "secret.txt"
+        outside.write_bytes(b"x")
+        with pytest.raises(ValueError):
+            _validate_image_paths({"image_path": str(outside)}, allowed_roots=[root])
+
+    def test_validate_image_paths_allows_inside_sandbox(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        inside = root / "img.jpg"
+        inside.write_bytes(b"x")
+        _validate_image_paths({"image_path": str(inside)}, allowed_roots=[root])
+
 
 def test_deterministic_tools_have_output_schema():
     for name in (
