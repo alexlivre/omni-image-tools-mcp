@@ -159,6 +159,9 @@ outputs/
 # Local code intelligence index (machine-specific, regenerable)
 .codegraph/
 
+# Git worktrees
+.worktrees/
+
 # Config files (except examples)
 ollama-vision-config.json
 !examples/ollama-vision-config.json
