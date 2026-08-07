@@ -16,49 +16,49 @@
 - [x] Allowlist de modelos Ollama
 
 ### Fase 2: Fork e Setup (Fase 1 do Plano)
-- [ ] Forkar o repo de referência
-- [ ] Criar estrutura de diretórios
-- [ ] Implementar error classes
-- [ ] Implementar config parsing
-- [ ] Criar fixtures de teste
+- [ ] Forkar o repo de referência (N/A: criado como repo standalone `omni-image-tools-mcp`, não forked)
+- [x] Criar estrutura de diretórios
+- [x] Implementar error classes
+- [x] Implementar config parsing
+- [x] Criar fixtures de teste
 
 ### Fase 3: Foundation (Fase 2 do Plano)
-- [ ] Implementar VisionProvider ABC (providers/base.py)
-- [ ] Implementar ProviderFactory (providers/__init__.py)
-- [ ] Implementar ToolRegistry (tools/__init__.py)
-- [ ] Definir schemas para todas tools
-- [ ] Criar prompts/vision.yaml e prompts/processing.yaml
-- [ ] CLI com commands (help, providers list, tools list)
+- [x] Implementar VisionProvider ABC (providers/base.py)
+- [x] Implementar ProviderFactory (providers/__init__.py)
+- [x] Implementar ToolRegistry (tools/__init__.py)
+- [x] Definir schemas para todas tools
+- [ ] Criar prompts/vision.yaml e prompts/processing.yaml (vision.yaml ok; processing.yaml não existe — prompts vivem no código)
+- [x] CLI com commands (help, providers list, tools list)
 
 ### Fase 4: Ollama Provider (Fase 3 do Plano)
-- [ ] Implementar OllamaProvider (providers/ollama.py)
-- [ ] Teste via CLI
-- [ ] Adicionar --debug mode
+- [x] Implementar OllamaProvider (providers/ollama.py)
+- [x] Teste via CLI
+- [x] Adicionar --debug mode
 
 ### Fase 5: Vision MVP (Fase 4 do Plano)
-- [ ] Implementar analyze_image
-- [ ] Implementar describe_image
-- [ ] Implementar identify_objects
-- [ ] Implementar read_text
+- [x] Implementar analyze_image
+- [ ] Implementar describe_image (não implementado como tool; coberto por `analyze_image`)
+- [x] Implementar identify_objects
+- [x] Implementar read_text
 
 ### Fase 6: Vision v2 (Fase 5 do Plano)
-- [ ] Implementar compare_images
+- [x] Implementar compare_images
 
 ### Fase 7: Processing (Fase 6 do Plano)
-- [ ] Implementar prepare_image
-- [ ] Implementar get_image_info
-- [ ] Implementar crop_image
-- [ ] Implementar convert_image_format
+- [x] Implementar prepare_image
+- [x] Implementar get_image_info
+- [x] Implementar crop_image
+- [x] Implementar convert_image_format
 
 ### Fase 8: Cloud Providers (Fase 7 do Plano)
-- [ ] Implementar OpenRouterProvider
-- [ ] Implementar OpenAIProvider
-- [ ] Implementar LMStudioProvider
+- [x] Implementar OpenRouterProvider
+- [x] Implementar OpenAIProvider
+- [x] Implementar LMStudioProvider
 
 ### Fase 9: Polish (Fase 8 do Plano)
-- [ ] README.md
-- [ ] Teste final (benchmark)
-- [ ] Atualizar docs
+- [x] README.md
+- [x] Teste final (benchmark)
+- [x] Atualizar docs
 
 ---
 
@@ -113,10 +113,10 @@ omni-image-tools-mcp/
 
 ## Dúvidas em Aberto
 
-- [ ] Adicionar cache de resultados?
-- [ ] Rate limiting por modelo?
-- [ ] Fallback automático entre modelos?
-- [ ] Internationalização dos prompts?
+- [x] Adicionar cache de resultados? (Task 13: `src/utils/result_cache.py`, `OMNI_VISION_CACHE`)
+- [x] Rate limiting por modelo? (Task 14: `src/utils/rate_limiter.py`, `OMNI_RATE_LIMIT_PER_MIN`)
+- [x] Fallback automático entre modelos? (Task 15: `fallback_models` em `src/config.py` / `openai_compatible.py`, `OMNI_FALLBACK_MODELS`)
+- [x] Internationalização dos prompts? (Task 16: `src/prompts/vision.pt.yaml`, `OMNI_LANG`)
 
 ---
 
@@ -155,3 +155,11 @@ Editar `src/prompts/vision.yaml` — não precisa mexer código.
 - [x] Remover placeholder morto do registry; CLI `list_tools` derivado dos schemas; benchmark filtra providers
 - [x] `with` em `Image.open`/`open` (sem resource leak); constantes nomeadas
 - [x] Testes: security (26), protocolo (13), config, providers, download; mypy verde; coverage configurado
+
+## Backlog — entregue neste plano
+
+- [x] CI workflow (Task 1): `.github/workflows/ci.yml` (ruff, mypy, pytest + coverage gate)
+- [x] FastMCP server (Tasks 10-11): `src/server_fastmcp.py` (progress, meta, entry point em pyproject)
+- [x] LM Studio provider (Task 12): `src/providers/lmstudio.py` (OpenAI-compatible, local)
+- [x] Cache / rate-limit / fallback / i18n (Tasks 13-16): `result_cache.py`, `rate_limiter.py`, `fallback_models`, `vision.pt.yaml`
+- [x] Evaluations runner (Task 17): `scripts/run_evaluations.py` + `scripts/evaluations.xml` (10 QA pairs)
