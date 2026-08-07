@@ -24,6 +24,11 @@ async def test_identify_objects_with_count_and_categories(tmp_path):
     with (
         patch.object(identify_module, "ProviderFactory") as factory_cls,
         patch.object(identify_module, "get_config") as cfg,
+        patch.object(
+            identify_module.GPUResourceManager,
+            "ensure_single_provider",
+            new_callable=AsyncMock,
+        ),
     ):
         provider = AsyncMock(analyze=AsyncMock(return_value="car x1"))
         factory_cls.get.return_value = provider
@@ -51,6 +56,11 @@ async def test_read_text_with_formatting_and_language_hint(tmp_path):
     with (
         patch.object(read_text_module.ProviderFactory, "get") as factory,
         patch.object(read_text_module, "get_config") as cfg,
+        patch.object(
+            read_text_module.GPUResourceManager,
+            "ensure_single_provider",
+            new_callable=AsyncMock,
+        ),
     ):
         provider = AsyncMock(analyze=AsyncMock(return_value="some text"))
         factory.return_value = provider
@@ -75,6 +85,10 @@ async def test_analyze_image_uses_default_prompt(tmp_path):
     with (
         patch("src.tools.vision.analyze.ProviderFactory.get") as factory,
         patch("src.tools.vision.analyze.get_config") as cfg,
+        patch(
+            "src.tools.vision.analyze.GPUResourceManager.ensure_single_provider",
+            new_callable=AsyncMock,
+        ),
     ):
         provider = AsyncMock(analyze=AsyncMock(return_value="ok"))
         factory.return_value = provider

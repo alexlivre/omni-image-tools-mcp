@@ -7,7 +7,7 @@ import src.config as config_module
 
 @pytest.fixture(autouse=True)
 def _reset_cache_and_env(monkeypatch):
-    config_module._config = None
+    monkeypatch.setattr(config_module, "_config", None)
     for k in (
         "OMNI_VISION_PROVIDER",
         "OMNI_VISION_API_KEY",
