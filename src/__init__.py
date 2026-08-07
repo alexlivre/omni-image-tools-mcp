@@ -4,7 +4,7 @@ MCP server for image vision and processing.
 Supports: Ollama, OpenRouter, OpenAI
 """
 
-__version__ = "1.0.0"
+__version__ = "0.5.0"
 
 from .server import OmniImageToolsServer, main
 from .config import Config
