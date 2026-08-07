@@ -63,7 +63,10 @@ class OpenAICompatibleProvider(VisionProvider):
                 continue
             if response.status_code in RETRYABLE_STATUS and attempt < max_retries:
                 retry_after = response.headers.get("retry-after")
-                delay = float(retry_after) if retry_after else 2**attempt
+                try:
+                    delay = float(retry_after) if retry_after else 2**attempt
+                except ValueError:
+                    delay = 2**attempt
                 await asyncio.sleep(delay)
                 continue
             return response

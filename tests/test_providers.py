@@ -1,6 +1,6 @@
 """Tests for providers: validate_image, model allowlist, is_local attributes."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -149,6 +149,49 @@ async def test_retry_succeeds_after_transient_errors(monkeypatch):
         result = await prov.analyze(b"img", "prompt")
     assert result == "ok"
     assert flaky.calls == 3
+
+
+@pytest.mark.asyncio
+async def test_retry_http_date_retry_after_does_not_crash(monkeypatch):
+    monkeypatch.setenv("OMNI_VISION_PROVIDER", "openrouter")
+    monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+    monkeypatch.setenv("OMNI_VISION_MAX_RETRIES", "2")
+    prov = OpenRouterProvider(Config.from_env())
+
+    class DateRetryResp:
+        def __init__(self, code):
+            self.status_code = code
+            self.headers = {"retry-after": "Wed, 21 Oct 2015 07:28:00 GMT"} if code == 429 else {}
+
+        def json(self):
+            return {"choices": [{"message": {"content": "ok"}}]}
+
+        @property
+        def text(self):
+            return "rate limited"
+
+    class FlakyClient:
+        def __init__(self):
+            self.calls = 0
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers, json):
+            self.calls += 1
+            if self.calls == 1:
+                return DateRetryResp(429)
+            return DateRetryResp(200)
+
+    flaky = FlakyClient()
+    with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=flaky):
+        with patch("src.providers.openai_compatible.asyncio.sleep", AsyncMock()):
+            result = await prov.analyze(b"img", "prompt")
+    assert result == "ok"
+    assert flaky.calls == 2
 
 
 @pytest.mark.asyncio
