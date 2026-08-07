@@ -6,6 +6,7 @@ parsing, debug tracing (to stderr), and health checks; concrete providers
 only declare endpoint, default model, and headers.
 """
 
+import asyncio
 import base64
 import logging
 import sys
@@ -17,6 +18,8 @@ import httpx
 from .base import VisionProvider
 
 logger = logging.getLogger(__name__)
+
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 def _dbg(*args: Any, **kwargs: Any) -> None:
@@ -47,6 +50,25 @@ class OpenAICompatibleProvider(VisionProvider):
             "Content-Type": "application/json",
         }
 
+    async def _post(self, client: httpx.AsyncClient, payload: dict[str, Any]) -> httpx.Response:
+        """POST with exponential backoff retry for transient status codes."""
+        max_retries = getattr(self.config, "max_retries", 3)
+        for attempt in range(max_retries + 1):
+            try:
+                response = await client.post(self.endpoint, headers=self._headers(), json=payload)
+            except httpx.HTTPError:
+                if attempt >= max_retries:
+                    raise
+                await asyncio.sleep(2**attempt)
+                continue
+            if response.status_code in RETRYABLE_STATUS and attempt < max_retries:
+                retry_after = response.headers.get("retry-after")
+                delay = float(retry_after) if retry_after else 2**attempt
+                await asyncio.sleep(delay)
+                continue
+            return response
+        raise httpx.HTTPError("exhausted retries")
+
     @staticmethod
     def _image_part(image_data: bytes) -> dict[str, Any]:
         b64 = base64.b64encode(image_data).decode("utf-8")
@@ -72,7 +94,7 @@ class OpenAICompatibleProvider(VisionProvider):
         start = time.time()
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(self.endpoint, headers=self._headers(), json=payload)
+                response = await self._post(client, payload)
                 elapsed = time.time() - start
                 if self.debug:
                     _dbg(
@@ -102,7 +124,7 @@ class OpenAICompatibleProvider(VisionProvider):
             _dbg(f"[{type(self).__name__}] compare model={model} images={len(image_datas)}")
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(self.endpoint, headers=self._headers(), json=payload)
+                response = await self._post(client, payload)
                 if response.status_code != 200:
                     raise httpx.HTTPError(self._masked_error(response))
                 result = response.json()

@@ -30,6 +30,7 @@ class Config(BaseModel):
     api_key: str | None = None
     default_model: str | None = None
     timeout: int = Field(default=120)
+    max_retries: int = Field(default=3)
 
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openrouter: OpenRouterConfig | None = None
@@ -64,6 +65,14 @@ class Config(BaseModel):
                 message=f"OMNI_VISION_TIMEOUT must be an integer, got: {timeout_str}",
             )
 
+        max_retries_str = os.getenv("OMNI_VISION_MAX_RETRIES", "3")
+        try:
+            max_retries = int(max_retries_str)
+        except ValueError:
+            raise ConfigError(
+                message=f"OMNI_VISION_MAX_RETRIES must be an integer, got: {max_retries_str}",
+            )
+
         ollama_allowed = os.getenv("OLLAMA_ALLOWED_MODELS", "qwen3-vl:4b,qwen3-vl:2b")
         ollama_auto_pull_str = os.getenv("OLLAMA_AUTO_PULL", "false").lower()
         ollama_auto_pull = ollama_auto_pull_str in ["true", "1", "yes"]
@@ -73,6 +82,7 @@ class Config(BaseModel):
             api_key=api_key,
             default_model=os.getenv("OMNI_VISION_DEFAULT_MODEL"),
             timeout=timeout,
+            max_retries=max_retries,
             ollama=OllamaConfig(
                 base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
                 allowed_models=ollama_allowed.split(","),
