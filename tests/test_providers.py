@@ -253,17 +253,30 @@ async def test_fallback_switches_model_on_error(monkeypatch):
     prov = OpenRouterProvider(Config.from_env())
 
     seen = []
+
     class ErrResp:
         status_code = 500
+
         @property
-        def text(self): return "fail"
+        def text(self):
+            return "fail"
+
     class Resp:
         status_code = 200
-        def json(self): return {"choices": [{"message": {"content": "ok-b"}}]}
+
+        def json(self):
+            return {"choices": [{"message": {"content": "ok-b"}}]}
+
     class Client:
-        def __init__(self): self.responses = {}
-        async def __aenter__(self): return self
-        async def __aexit__(self, *a): return False
+        def __init__(self):
+            self.responses = {}
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
         async def post(self, url, headers, json):
             seen.append(json["model"])
             if json["model"] == "model-a":

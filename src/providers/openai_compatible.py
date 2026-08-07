@@ -123,8 +123,7 @@ class OpenAICompatibleProvider(VisionProvider):
             except httpx.HTTPError as e:
                 if index < len(models) - 1:
                     logger.warning(
-                        f"{type(self).__name__} model {current_model} failed ({e}); "
-                        f"trying next"
+                        f"{type(self).__name__} model {current_model} failed ({e}); trying next"
                     )
                     continue
                 logger.error(f"{type(self).__name__} API error: {e}")
@@ -158,8 +157,7 @@ class OpenAICompatibleProvider(VisionProvider):
             except httpx.HTTPError as e:
                 if index < len(models) - 1:
                     logger.warning(
-                        f"{type(self).__name__} model {current_model} failed ({e}); "
-                        f"trying next"
+                        f"{type(self).__name__} model {current_model} failed ({e}); trying next"
                     )
                     continue
                 logger.error(f"{type(self).__name__} API error: {e}")

@@ -12,7 +12,9 @@ import os
 
 class RateLimiter:
     def __init__(self, per_minute: int | None = None):
-        raw = per_minute if per_minute is not None else int(os.getenv("OMNI_RATE_LIMIT_PER_MIN", "0"))
+        raw = (
+            per_minute if per_minute is not None else int(os.getenv("OMNI_RATE_LIMIT_PER_MIN", "0"))
+        )
         self._per_minute = max(0, raw)
         self._interval = 60.0 / self._per_minute if self._per_minute else 0.0
         self._tokens: dict[tuple[str, str], float] = {}

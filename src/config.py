@@ -81,9 +81,7 @@ class Config(BaseModel):
             )
 
         fallback_models = [
-            m.strip()
-            for m in os.getenv("OMNI_FALLBACK_MODELS", "").split(",")
-            if m.strip()
+            m.strip() for m in os.getenv("OMNI_FALLBACK_MODELS", "").split(",") if m.strip()
         ]
 
         ollama_allowed = os.getenv("OLLAMA_ALLOWED_MODELS", "qwen3-vl:4b,qwen3-vl:2b")
