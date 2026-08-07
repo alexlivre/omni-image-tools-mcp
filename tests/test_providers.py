@@ -241,3 +241,36 @@ def test_lmstudio_provider_is_local(monkeypatch):
     assert prov.is_local is True
     assert prov.image_limit_per_request == 1
     assert prov.endpoint == "http://localhost:1234/v1/chat/completions"
+
+
+@pytest.mark.asyncio
+async def test_fallback_switches_model_on_error(monkeypatch):
+    monkeypatch.setenv("OMNI_VISION_PROVIDER", "openrouter")
+    monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+    monkeypatch.setenv("OMNI_VISION_MAX_RETRIES", "0")
+    monkeypatch.setenv("OMNI_VISION_DEFAULT_MODEL", "model-a")
+    monkeypatch.setenv("OMNI_FALLBACK_MODELS", "model-b")
+    prov = OpenRouterProvider(Config.from_env())
+
+    seen = []
+    class ErrResp:
+        status_code = 500
+        @property
+        def text(self): return "fail"
+    class Resp:
+        status_code = 200
+        def json(self): return {"choices": [{"message": {"content": "ok-b"}}]}
+    class Client:
+        def __init__(self): self.responses = {}
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def post(self, url, headers, json):
+            seen.append(json["model"])
+            if json["model"] == "model-a":
+                return ErrResp()
+            return Resp()
+
+    with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=Client()):
+        result = await prov.analyze(b"img", "p")
+    assert result == "ok-b"
+    assert seen == ["model-a", "model-b"]

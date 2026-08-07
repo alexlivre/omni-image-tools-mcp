@@ -45,6 +45,11 @@ class OpenAICompatibleProvider(VisionProvider):
     def _resolve_model(self, model: str | None) -> str:
         return model or self.default_model
 
+    def _fallback_models(self, model: str | None) -> list[str]:
+        """Resolved model followed by configured fallbacks, deduplicated in order."""
+        primary = self._resolve_model(model)
+        return list(dict.fromkeys([primary, *getattr(self.config, "fallback_models", [])]))
+
     def _headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self.api_key}",
@@ -85,7 +90,7 @@ class OpenAICompatibleProvider(VisionProvider):
         prompt: str = "",
         model: str | None = None,
     ) -> str:
-        model = self._resolve_model(model)
+        models = self._fallback_models(model)
         content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         if image_data is not None:
             is_valid, error_msg = self.validate_image(image_data)
@@ -93,27 +98,38 @@ class OpenAICompatibleProvider(VisionProvider):
                 raise ValueError(error_msg)
             content.append(self._image_part(image_data))
 
-        payload = {"model": model, "messages": [{"role": "user", "content": content}]}
         if self.debug:
-            _dbg(f"[{type(self).__name__}] analyze model={model} img={len(image_data or b'')}")
-        start = time.time()
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await self._post(client, payload)
-                elapsed = time.time() - start
-                if self.debug:
-                    _dbg(
-                        f"[{type(self).__name__}] status={response.status_code} "
-                        f"elapsed={elapsed:.2f}s"
+            _dbg(f"[{type(self).__name__}] analyze models={models} img={len(image_data or b'')}")
+        for index, current_model in enumerate(models):
+            payload = {
+                "model": current_model,
+                "messages": [{"role": "user", "content": content}],
+            }
+            start = time.time()
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await self._post(client, payload)
+                    elapsed = time.time() - start
+                    if self.debug:
+                        _dbg(
+                            f"[{type(self).__name__}] model={current_model} "
+                            f"status={response.status_code} elapsed={elapsed:.2f}s"
+                        )
+                    if response.status_code != 200:
+                        raise httpx.HTTPError(self._masked_error(response))
+                    result = response.json()
+                    text: str = result["choices"][0]["message"]["content"]
+                    return text
+            except httpx.HTTPError as e:
+                if index < len(models) - 1:
+                    logger.warning(
+                        f"{type(self).__name__} model {current_model} failed ({e}); "
+                        f"trying next"
                     )
-                if response.status_code != 200:
-                    raise httpx.HTTPError(self._masked_error(response))
-                result = response.json()
-                text: str = result["choices"][0]["message"]["content"]
-                return text
-        except httpx.HTTPError as e:
-            logger.error(f"{type(self).__name__} API error: {e}")
-            raise
+                    continue
+                logger.error(f"{type(self).__name__} API error: {e}")
+                raise
+        raise httpx.HTTPError("no model succeeded")
 
     async def compare(
         self,
@@ -121,23 +137,34 @@ class OpenAICompatibleProvider(VisionProvider):
         prompt: str,
         model: str | None = None,
     ) -> str:
-        model = self._resolve_model(model)
+        models = self._fallback_models(model)
         parts = [{"type": "text", "text": prompt}]
         parts.extend(self._image_part(d) for d in image_datas)
-        payload = {"model": model, "messages": [{"role": "user", "content": parts}]}
         if self.debug:
-            _dbg(f"[{type(self).__name__}] compare model={model} images={len(image_datas)}")
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await self._post(client, payload)
-                if response.status_code != 200:
-                    raise httpx.HTTPError(self._masked_error(response))
-                result = response.json()
-                text: str = result["choices"][0]["message"]["content"]
-                return text
-        except httpx.HTTPError as e:
-            logger.error(f"{type(self).__name__} API error: {e}")
-            raise
+            _dbg(f"[{type(self).__name__}] compare models={models} images={len(image_datas)}")
+        for index, current_model in enumerate(models):
+            payload = {
+                "model": current_model,
+                "messages": [{"role": "user", "content": parts}],
+            }
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await self._post(client, payload)
+                    if response.status_code != 200:
+                        raise httpx.HTTPError(self._masked_error(response))
+                    result = response.json()
+                    text: str = result["choices"][0]["message"]["content"]
+                    return text
+            except httpx.HTTPError as e:
+                if index < len(models) - 1:
+                    logger.warning(
+                        f"{type(self).__name__} model {current_model} failed ({e}); "
+                        f"trying next"
+                    )
+                    continue
+                logger.error(f"{type(self).__name__} API error: {e}")
+                raise
+        raise httpx.HTTPError("no model succeeded")
 
     async def health_check(self) -> bool:
         try:
