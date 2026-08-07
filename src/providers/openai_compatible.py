@@ -15,6 +15,7 @@ from typing import Any
 
 import httpx
 
+from ..utils.rate_limiter import RATE_LIMITER
 from .base import VisionProvider
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class OpenAICompatibleProvider(VisionProvider):
 
     async def _post(self, client: httpx.AsyncClient, payload: dict[str, Any]) -> httpx.Response:
         """POST with exponential backoff retry for transient status codes."""
+        await RATE_LIMITER.acquire(type(self).__name__, str(payload["model"]))
         max_retries = getattr(self.config, "max_retries", 3)
         for attempt in range(max_retries + 1):
             try:

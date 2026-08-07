@@ -7,6 +7,7 @@ import time
 import sys
 from typing import Any
 
+from ..utils.rate_limiter import RATE_LIMITER
 from .base import VisionProvider
 
 logger = logging.getLogger(__name__)
@@ -89,6 +90,7 @@ class OllamaProvider(VisionProvider):
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                await RATE_LIMITER.acquire(type(self).__name__, model)
                 async with session.post(
                     f"{self.base_url}/api/generate",
                     json=payload,
@@ -164,6 +166,7 @@ class OllamaProvider(VisionProvider):
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                await RATE_LIMITER.acquire(type(self).__name__, model)
                 async with session.post(
                     f"{self.base_url}/api/generate",
                     json=payload,
