@@ -17,6 +17,6 @@ def test_cache_disabled_by_default(monkeypatch):
     import src.utils.result_cache as rc
 
     rc._CACHE.clear()
-    assert _CACHE_ENABLED is False
+    assert rc._CACHE_ENABLED is False
     cache_result("k", "v")
     assert cached("k") is None
