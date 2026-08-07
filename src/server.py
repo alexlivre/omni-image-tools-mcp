@@ -8,7 +8,7 @@ Supports: Ollama, OpenRouter, OpenAI
 import asyncio
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 import mcp.server.stdio
 import mcp.types as types
@@ -170,9 +170,22 @@ def _result_text(result: Any) -> str:
     return str(result)
 
 
+def _structured(result: Any) -> dict | None:
+    if not isinstance(result, dict):
+        return None
+    clean = {k: v for k, v in result.items() if k not in ("output_data", "content_warning")}
+    try:
+        import json
+
+        return cast(dict, json.loads(json.dumps(clean, default=str)))
+    except (TypeError, ValueError):
+        return None
+
+
 def _success_result(result: Any) -> types.CallToolResult:
     return types.CallToolResult(
         content=[types.TextContent(type="text", text=_result_text(result))],
+        structuredContent=_structured(result),
         isError=False,
     )
 

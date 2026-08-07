@@ -7,7 +7,7 @@ SDK-internal request handlers, which are fragile across SDK versions.
 
 import pytest
 
-from src.server import _error_result, _result_text, _validate_image_paths
+from src.server import _error_result, _result_text, _success_result, _validate_image_paths
 from src.tools import TOOL_SCHEMAS
 
 
@@ -108,7 +108,23 @@ class TestPathValidation:
 
 
 def test_deterministic_tools_have_output_schema():
-    for name in ("get_image_info", "crop_image", "convert_image_format",
-                 "prepare_image", "download_image", "extract_object",
-                 "get_provider_info"):
+    for name in (
+        "get_image_info",
+        "crop_image",
+        "convert_image_format",
+        "prepare_image",
+        "download_image",
+        "extract_object",
+        "get_provider_info",
+    ):
         assert TOOL_SCHEMAS[name].get("outputSchema"), f"{name} missing outputSchema"
+
+
+def test_success_result_has_structured_content():
+    r = _success_result({"success": True, "format": "PNG", "width": 100})
+    assert r.structuredContent == {"success": True, "format": "PNG", "width": 100}
+
+
+def test_success_result_strips_binary_fields():
+    r = _success_result({"success": True, "output_data": b"\x01\x02", "format": "PNG"})
+    assert "output_data" not in r.structuredContent
