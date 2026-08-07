@@ -15,6 +15,7 @@ def _clean_env(monkeypatch):
         "OLLAMA_ALLOWED_MODELS",
         "OLLAMA_AUTO_PULL",
         "OLLAMA_BASE_URL",
+        "LMSTUDIO_BASE_URL",
     ):
         monkeypatch.delenv(k, raising=False)
 
@@ -80,9 +81,19 @@ class TestProviderValidation:
         assert exc.value.missing_key == "OMNI_VISION_PROVIDER"
 
     def test_invalid_provider_raises(self, monkeypatch):
-        monkeypatch.setenv("OMNI_VISION_PROVIDER", "lmstudio")
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "not-a-provider")
         with pytest.raises(ConfigError):
             Config.from_env()
+
+    def test_lmstudio_no_key_required(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "lmstudio")
+        monkeypatch.setenv("LMSTUDIO_BASE_URL", "http://localhost:1234")
+        cfg = Config.from_env()
+        assert cfg.provider == "lmstudio"
+        assert cfg.api_key is None
+        assert cfg.lmstudio is not None
+        assert cfg.lmstudio.base_url == "http://localhost:1234"
+        assert cfg.lmstudio.default_model == "qwen2.5-vl-7b-instruct"
 
     def test_invalid_timeout_raises(self, monkeypatch):
         monkeypatch.setenv("OMNI_VISION_PROVIDER", "ollama")

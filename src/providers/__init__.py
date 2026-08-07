@@ -6,6 +6,7 @@ from .base import VisionProvider
 from .ollama import OllamaProvider
 from .openrouter import OpenRouterProvider
 from .openai import OpenAIProvider
+from .lmstudio import LMStudioProvider
 
 
 class ProviderFactory:
@@ -15,6 +16,7 @@ class ProviderFactory:
         "ollama": OllamaProvider,
         "openrouter": OpenRouterProvider,
         "openai": OpenAIProvider,
+        "lmstudio": LMStudioProvider,
     }
 
     @classmethod
@@ -57,4 +59,5 @@ __all__ = [
     "OllamaProvider",
     "OpenRouterProvider",
     "OpenAIProvider",
+    "LMStudioProvider",
 ]

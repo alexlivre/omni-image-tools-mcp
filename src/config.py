@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from .errors import ConfigError
 
 
-ProviderType = Literal["ollama", "openrouter", "openai"]
+ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio"]
 
 
 class OllamaConfig(BaseModel):
@@ -25,6 +25,11 @@ class OpenAIConfig(BaseModel):
     default_model: str = Field(default="gpt-5.4-mini")
 
 
+class LMStudioConfig(BaseModel):
+    base_url: str = Field(default="http://localhost:1234")
+    default_model: str = Field(default="qwen2.5-vl-7b-instruct")
+
+
 class Config(BaseModel):
     provider: ProviderType
     api_key: str | None = None
@@ -35,6 +40,7 @@ class Config(BaseModel):
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openrouter: OpenRouterConfig | None = None
     openai: OpenAIConfig | None = None
+    lmstudio: LMStudioConfig | None = None
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -45,9 +51,9 @@ class Config(BaseModel):
                 missing_key="OMNI_VISION_PROVIDER",
             )
 
-        if provider not in ["ollama", "openrouter", "openai"]:
+        if provider not in ["ollama", "openrouter", "openai", "lmstudio"]:
             raise ConfigError(
-                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai",
+                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai, lmstudio",
             )
 
         api_key = os.getenv("OMNI_VISION_API_KEY")
@@ -99,6 +105,11 @@ class Config(BaseModel):
             config.openai = OpenAIConfig(
                 api_key=api_key or "",
                 default_model=config.default_model or "gpt-5.4-mini",
+            )
+        elif provider == "lmstudio":
+            config.lmstudio = LMStudioConfig(
+                base_url=os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234"),
+                default_model=config.default_model or "qwen2.5-vl-7b-instruct",
             )
 
         return config

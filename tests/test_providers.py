@@ -228,3 +228,16 @@ async def test_retry_disabled_raises_on_429(monkeypatch):
         with pytest.raises(httpx.HTTPError):
             await prov.analyze(b"img", "prompt")
     assert flaky.calls == 1
+
+
+def test_lmstudio_provider_is_local(monkeypatch):
+    from src.providers import ProviderFactory
+    from src.config import Config
+
+    monkeypatch.setenv("OMNI_VISION_PROVIDER", "lmstudio")
+    monkeypatch.setenv("LMSTUDIO_BASE_URL", "http://localhost:1234")
+    cfg = Config.from_env()
+    prov = ProviderFactory.get("lmstudio", cfg)
+    assert prov.is_local is True
+    assert prov.image_limit_per_request == 1
+    assert prov.endpoint == "http://localhost:1234/v1/chat/completions"
