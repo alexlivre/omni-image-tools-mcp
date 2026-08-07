@@ -4,11 +4,16 @@ import aiohttp
 import base64
 import logging
 import time
+import sys
 from typing import Any
 
 from .base import VisionProvider
 
 logger = logging.getLogger(__name__)
+
+
+def _dbg(*args: Any, **kwargs: Any) -> None:
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class OllamaProvider(VisionProvider):
@@ -20,6 +25,8 @@ class OllamaProvider(VisionProvider):
         self.allowed_models = config.ollama.allowed_models
         self.timeout = aiohttp.ClientTimeout(total=config.timeout)
         self.debug = debug
+        self.is_local = True
+        self.image_limit_per_request: int = 1
 
     def validate_model(self, model: str | None) -> str:
         """Validate and return the model to use."""
@@ -44,7 +51,7 @@ class OllamaProvider(VisionProvider):
         """Analyze image using Ollama API."""
         model = self.validate_model(model)
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model,
             "prompt": prompt,
             "stream": False,
@@ -60,23 +67,23 @@ class OllamaProvider(VisionProvider):
         image_size_kb = len(image_data) / 1024 if image_data else 0
 
         if self.debug:
-            print(f"\n{'=' * 60}")
-            print("DEBUG MODE - Ollama Request")
-            print(f"{'=' * 60}")
-            print(f"Endpoint: {self.base_url}/api/generate")
-            print(f"Model: {model}")
-            print(f"Image size: {image_size_kb:.1f} KB")
-            print(f"Prompt length: {len(prompt)} chars")
-            print(f"Timeout: {self.timeout.total}s")
-            print("\nRequest payload:")
-            print(f"  model: {payload['model']}")
-            print(
+            _dbg(f"\n{'=' * 60}")
+            _dbg("DEBUG MODE - Ollama Request")
+            _dbg(f"{'=' * 60}")
+            _dbg(f"Endpoint: {self.base_url}/api/generate")
+            _dbg(f"Model: {model}")
+            _dbg(f"Image size: {image_size_kb:.1f} KB")
+            _dbg(f"Prompt length: {len(prompt)} chars")
+            _dbg(f"Timeout: {self.timeout.total}s")
+            _dbg("\nRequest payload:")
+            _dbg(f"  model: {payload['model']}")
+            _dbg(
                 f"  prompt: {payload['prompt'][:100]}..."
                 if len(payload["prompt"]) > 100
                 else f"  prompt: {payload['prompt']}"
             )
-            print(f"  images: [base64 encoded, {len(image_b64)} chars]")
-            print(f"{'=' * 60}\n")
+            _dbg(f"  images: [base64 encoded, {len(image_b64)} chars]")
+            _dbg(f"{'=' * 60}\n")
 
         start_time = time.time()
 
@@ -89,17 +96,17 @@ class OllamaProvider(VisionProvider):
                     elapsed = time.time() - start_time
 
                     if self.debug:
-                        print(f"\n{'=' * 60}")
-                        print("DEBUG MODE - Ollama Response")
-                        print(f"{'=' * 60}")
-                        print(f"Status: {response.status}")
-                        print(f"Response time: {elapsed:.2f}s")
+                        _dbg(f"\n{'=' * 60}")
+                        _dbg("DEBUG MODE - Ollama Response")
+                        _dbg(f"{'=' * 60}")
+                        _dbg(f"Status: {response.status}")
+                        _dbg(f"Response time: {elapsed:.2f}s")
 
                     if response.status != 200:
                         error_text = await response.text()
                         if self.debug:
-                            print(f"Error: {error_text}")
-                            print(f"{'=' * 60}\n")
+                            _dbg(f"Error: {error_text}")
+                            _dbg(f"{'=' * 60}\n")
                         raise aiohttp.ClientResponseError(
                             response.request_info,
                             response.history,
@@ -108,17 +115,17 @@ class OllamaProvider(VisionProvider):
                         )
 
                     result = await response.json()
-                    response_text = result.get("response", "")
+                    response_text: str = result.get("response", "")
 
                     if self.debug:
-                        print(f"Response length: {len(response_text)} chars")
-                        print("\nResponse content:")
-                        print(
+                        _dbg(f"Response length: {len(response_text)} chars")
+                        _dbg("\nResponse content:")
+                        _dbg(
                             f"  {response_text[:200]}..."
                             if len(response_text) > 200
                             else f"  {response_text}"
                         )
-                        print(f"{'=' * 60}\n")
+                        _dbg(f"{'=' * 60}\n")
 
                     return response_text
 
@@ -137,7 +144,7 @@ class OllamaProvider(VisionProvider):
 
         images_b64 = [base64.b64encode(img).decode("utf-8") for img in image_datas]
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model,
             "prompt": prompt,
             "images": images_b64,
@@ -145,13 +152,13 @@ class OllamaProvider(VisionProvider):
         }
 
         if self.debug:
-            print(f"\n{'=' * 60}")
-            print("DEBUG MODE - Ollama Compare Request")
-            print(f"{'=' * 60}")
-            print(f"Model: {model}")
+            _dbg(f"\n{'=' * 60}")
+            _dbg("DEBUG MODE - Ollama Compare Request")
+            _dbg(f"{'=' * 60}")
+            _dbg(f"Model: {model}")
             for i, b64 in enumerate(images_b64):
-                print(f"  Image {i + 1}: {len(b64)} chars")
-            print(f"{'=' * 60}\n")
+                _dbg(f"  Image {i + 1}: {len(b64)} chars")
+            _dbg(f"{'=' * 60}\n")
 
         start_time = time.time()
 
@@ -164,8 +171,8 @@ class OllamaProvider(VisionProvider):
                     elapsed = time.time() - start_time
 
                     if self.debug:
-                        print(f"Status: {response.status}")
-                        print(f"Response time: {elapsed:.2f}s")
+                        _dbg(f"Status: {response.status}")
+                        _dbg(f"Response time: {elapsed:.2f}s")
 
                     if response.status != 200:
                         error_text = await response.text()
@@ -177,7 +184,7 @@ class OllamaProvider(VisionProvider):
                         )
 
                     result = await response.json()
-                    return result.get("response", "")
+                    return str(result.get("response", ""))
 
         except aiohttp.ClientError as e:
             logger.error(f"Ollama API error: {e}")

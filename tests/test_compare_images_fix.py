@@ -29,6 +29,7 @@ async def test_compare_sequential_calls_analyze_without_image(tmp_path):
         patch.object(compare_module, "get_config") as cfg,
     ):
         provider = AsyncMock(analyze=fake_analyze)
+        provider.is_local = True
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
         cfg.return_value.default_model = "qwen3-vl:4b"
@@ -69,6 +70,7 @@ async def test_compare_parallel_still_sends_images(tmp_path):
         patch.object(compare_module, "get_config") as cfg,
     ):
         provider = AsyncMock(compare=fake_compare)
+        provider.is_local = False
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "openrouter"
         cfg.return_value.default_model = "google/gemini-2.5-flash"

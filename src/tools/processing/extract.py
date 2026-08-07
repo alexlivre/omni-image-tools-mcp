@@ -1,6 +1,7 @@
 """Extract object from image tool for omni-image-tools-mcp."""
 
 import json
+import os
 import re
 import uuid
 from pathlib import Path
@@ -12,6 +13,14 @@ from ...config import get_config
 from ...providers import ProviderFactory
 from ...utils import preprocess_to_bytes
 from ...utils.gpu_memory import GPUResourceManager
+from ...utils.security import MAX_BBOX_FRACTION, MIN_CROP_DIM
+
+
+def _default_output_dir() -> Path:
+    override = os.getenv("OMNI_OUTPUT_DIR")
+    if override:
+        return Path(override)
+    return Path(__file__).parent.parent.parent.parent / "outputs"
 
 
 async def extract_object(
@@ -38,8 +47,8 @@ async def extract_object(
 
     image_data = preprocess_to_bytes(image_path)
 
-    img = Image.open(image_path)
-    img_width, img_height = img.size
+    with Image.open(image_path) as img:
+        img_width, img_height = img.size
 
     await GPUResourceManager.ensure_single_provider(config.provider)
 
@@ -72,7 +81,7 @@ async def extract_object(
     x1, x2 = min(x1, x2), max(x1, x2)
     y1, y2 = min(y1, y2), max(y1, y2)
 
-    if x2 - x1 < 5 or y2 - y1 < 5:
+    if x2 - x1 < MIN_CROP_DIM or y2 - y1 < MIN_CROP_DIM:
         return {
             "success": False,
             "error": f"Extracted region too small ({x2 - x1}x{y2 - y1}px). Object may not be visible.",
@@ -82,7 +91,7 @@ async def extract_object(
 
     bbox_area = (x2 - x1) * (y2 - y1)
     img_area = img_width * img_height
-    if img_area > 0 and bbox_area / img_area > 0.95:
+    if img_area > 0 and bbox_area / img_area > MAX_BBOX_FRACTION:
         return {
             "success": False,
             "error": f"Could not locate '{object_description}' with confidence. Bounding box covers {bbox_area / img_area:.0%} of image (likely hallucination).",
@@ -90,7 +99,6 @@ async def extract_object(
             "image_size": (img_width, img_height),
         }
 
-    cropped = img.crop((x1, y1, x2, y2))
     ext = Path(image_path).suffix if Path(image_path).suffix else ".jpg"
 
     if output_filename:
@@ -108,19 +116,24 @@ async def extract_object(
     if output_dir:
         save_dir = Path(output_dir)
     else:
-        save_dir = Path(__file__).parent.parent.parent.parent / "test_images"
+        save_dir = _default_output_dir()
     save_dir.mkdir(parents=True, exist_ok=True)
     save_path = save_dir / save_name
-    cropped.save(save_path)
+
+    with Image.open(image_path) as img:
+        cropped = img.crop((x1, y1, x2, y2))
+        cropped.save(save_path)
+        extracted_size = cropped.size
+        cropped_format = img.format or "JPEG"
 
     return {
         "success": True,
         "local_path": str(save_path),
         "coordinates": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
         "object_description": object_description,
-        "extracted_size": cropped.size,
+        "extracted_size": extracted_size,
         "original_size": (img_width, img_height),
-        "format": cropped.format or "JPEG",
+        "format": cropped_format,
     }
 
 

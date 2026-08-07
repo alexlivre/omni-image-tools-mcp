@@ -1,5 +1,5 @@
 import os
-from typing import Literal
+from typing import Literal, cast
 from pydantic import BaseModel, Field
 from .errors import ConfigError
 
@@ -69,7 +69,7 @@ class Config(BaseModel):
         ollama_auto_pull = ollama_auto_pull_str in ["true", "1", "yes"]
 
         config = cls(
-            provider=provider,
+            provider=cast(ProviderType, provider),
             api_key=api_key,
             default_model=os.getenv("OMNI_VISION_DEFAULT_MODEL"),
             timeout=timeout,

@@ -1,7 +1,9 @@
 """Crop image tool for omni-image-tools-mcp."""
 
-from PIL import Image
+from io import BytesIO
 from typing import Any
+
+from PIL import Image
 
 
 async def crop_image(
@@ -23,28 +25,24 @@ async def crop_image(
     Returns:
         Dict with cropped image data and info
     """
-    img = Image.open(image_path)
+    with Image.open(image_path) as img:
+        original_width, original_height = img.size
 
-    original_width, original_height = img.size
+        if x < 0 or y < 0 or x + width > original_width or y + height > original_height:
+            return {
+                "success": False,
+                "error": f"Crop region ({x}, {y}, {width}, {height}) is outside image bounds ({original_width}x{original_height})",
+            }
 
-    if x < 0 or y < 0 or x + width > original_width or y + height > original_height:
+        cropped = img.crop((x, y, x + width, y + height))
+        output = BytesIO()
+        cropped.save(output, format=img.format or "PNG")
+        output.seek(0)
+
         return {
-            "success": False,
-            "error": f"Crop region ({x}, {y}, {width}, {height}) is outside image bounds ({original_width}x{original_height})",
+            "success": True,
+            "original_size": (original_width, original_height),
+            "crop_region": {"x": x, "y": y, "width": width, "height": height},
+            "cropped_size": (width, height),
+            "output_data": output.getvalue(),
         }
-
-    cropped = img.crop((x, y, x + width, y + height))
-
-    from io import BytesIO
-
-    output = BytesIO()
-    cropped.save(output, format=img.format or "PNG")
-    output.seek(0)
-
-    return {
-        "success": True,
-        "original_size": (original_width, original_height),
-        "crop_region": {"x": x, "y": y, "width": width, "height": height},
-        "cropped_size": (width, height),
-        "output_data": output.getvalue(),
-    }

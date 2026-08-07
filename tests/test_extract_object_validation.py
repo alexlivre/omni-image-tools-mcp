@@ -16,8 +16,10 @@ async def test_bbox_covers_entire_image_returns_failure(tmp_path):
 
     import src.tools.processing.extract as extract_module
 
-    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
-            patch.object(extract_module, "get_config") as cfg:
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -29,7 +31,9 @@ async def test_bbox_covers_entire_image_returns_failure(tmp_path):
 
     assert result["success"] is False
     error_msg = result["error"].lower()
-    assert "hallucination" in error_msg or "not found" in error_msg or "could not locate" in error_msg
+    assert (
+        "hallucination" in error_msg or "not found" in error_msg or "could not locate" in error_msg
+    )
 
 
 @pytest.mark.asyncio
@@ -42,8 +46,10 @@ async def test_valid_bbox_succeeds(tmp_path):
 
     import src.tools.processing.extract as extract_module
 
-    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
-            patch.object(extract_module, "get_config") as cfg:
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -70,8 +76,10 @@ async def test_output_dir_respected(tmp_path):
 
     import src.tools.processing.extract as extract_module
 
-    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
-            patch.object(extract_module, "get_config") as cfg:
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -85,6 +93,7 @@ async def test_output_dir_respected(tmp_path):
     assert result["success"] is True
     assert str(custom_dir) in result["local_path"]
     import os
+
     assert os.path.isfile(result["local_path"])
 
 
@@ -99,8 +108,10 @@ async def test_small_bbox_returns_failure(tmp_path):
 
     import src.tools.processing.extract as extract_module
 
-    with patch.object(extract_module, "ProviderFactory") as factory_cls, \
-            patch.object(extract_module, "get_config") as cfg:
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
         provider = AsyncMock(analyze=fake_analyze)
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "ollama"
@@ -111,3 +122,41 @@ async def test_small_bbox_returns_failure(tmp_path):
 
     assert result["success"] is False
     assert "small" in result["error"].lower() or "visible" in result["error"].lower()
+
+
+def test_parse_coordinates_handles_inverted_and_regex():
+    from src.tools.processing.extract import _parse_coordinates
+
+    assert _parse_coordinates('{"bbox_2d": [800, 100, 200, 500]}') == [800, 100, 200, 500]
+    assert _parse_coordinates("bbox_2d: [10, 20, 30, 40]") == [10, 20, 30, 40]
+    assert _parse_coordinates("found [120, 130, 140, 150] here") == [120, 130, 140, 150]
+    assert _parse_coordinates("no coords here") is None
+
+
+@pytest.mark.asyncio
+async def test_inverted_bbox_is_normalized(tmp_path):
+    img_path = tmp_path / "scene.jpg"
+    Image.new("RGB", (2000, 1500), (100, 100, 100)).save(img_path)
+
+    async def fake_analyze(image_data, prompt, model=None):
+        return '{"bbox_2d": [600, 600, 200, 200]}'
+
+    import src.tools.processing.extract as extract_module
+
+    with (
+        patch.object(extract_module, "ProviderFactory") as factory_cls,
+        patch.object(extract_module, "get_config") as cfg,
+    ):
+        provider = AsyncMock(analyze=fake_analyze)
+        factory_cls.get.return_value = provider
+        cfg.return_value.provider = "ollama"
+        result = await extract_module.extract_object(
+            image_path=str(img_path),
+            object_description="object",
+            output_dir=str(tmp_path),
+        )
+
+    assert result["success"] is True
+    c = result["coordinates"]
+    assert c["x1"] < c["x2"]
+    assert c["y1"] < c["y2"]

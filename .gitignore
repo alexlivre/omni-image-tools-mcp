@@ -154,6 +154,10 @@ tests/*.png
 tests/*.jpg
 tests/*.jpeg
 test_images/
+outputs/
+
+# Local code intelligence index (machine-specific, regenerable)
+.codegraph/
 
 # Config files (except examples)
 ollama-vision-config.json

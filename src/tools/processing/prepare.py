@@ -1,8 +1,9 @@
 """Prepare image tool for omni-image-tools-mcp."""
 
 import io
-from PIL import Image
 from typing import Any
+
+from PIL import Image
 
 
 async def prepare_image(
@@ -24,31 +25,29 @@ async def prepare_image(
     Returns:
         Dict with prepared image info and size
     """
-    img = Image.open(image_path)
+    with Image.open(image_path) as img:
+        original_width, original_height = img.size
+        scale = min(max_width / original_width, max_height / original_height)
 
-    original_width, original_height = img.size
-    scale = min(max_width / original_width, max_height / original_height)
+        work: Image.Image = img
+        if scale < 1:
+            new_width = int(original_width * scale)
+            new_height = int(original_height * scale)
+            work = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-    if scale < 1:
-        new_width = int(original_width * scale)
-        new_height = int(original_height * scale)
-        img = img.resize((new_width, new_height), Image.LANCZOS)
+        if format == "JPEG" and work.mode == "RGBA":
+            work = work.convert("RGB")
 
-    if format == "JPEG" and img.mode == "RGBA":
-        img = img.convert("RGB")
+        output = io.BytesIO()
+        work.save(output, format=format, quality=quality)
+        output.seek(0)
 
-    output = io.BytesIO()
-    img.save(output, format=format, quality=quality)
-    output.seek(0)
-
-    result_size = len(output.getvalue())
-
-    return {
-        "success": True,
-        "original_size": (original_width, original_height),
-        "new_size": img.size,
-        "format": format,
-        "quality": quality,
-        "output_size_bytes": result_size,
-        "output_data": output.getvalue(),
-    }
+        return {
+            "success": True,
+            "original_size": (original_width, original_height),
+            "new_size": work.size,
+            "format": format,
+            "quality": quality,
+            "output_size_bytes": len(output.getvalue()),
+            "output_data": output.getvalue(),
+        }

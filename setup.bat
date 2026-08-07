@@ -33,8 +33,9 @@ echo ====================================
 echo Setup Complete!
 echo ====================================
 echo.
-echo To configure your provider, copy .env.example to .env
-echo and set OMNI_VISION_PROVIDER and OMNI_VISION_API_KEY.
+echo To configure your provider, set these environment variables
+echo (or via the MCP host config): OMNI_VISION_PROVIDER and OMNI_VISION_API_KEY.
+echo See the README "Como configurar cada provedor" section for details.
 echo.
 echo To test the setup:
 echo   uv run python scripts/cli.py analyze --image test.jpg --prompt "Describe this"

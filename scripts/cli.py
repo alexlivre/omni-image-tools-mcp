@@ -23,9 +23,9 @@ async def check_gpu_status():
 
     status = await GPUResourceManager.check_memory_collision()
 
-    if status['ollama_models']:
+    if status["ollama_models"]:
         print(f"\nOllama ({len(status['ollama_models'])} loaded):")
-        for m in status['ollama_models']:
+        for m in status["ollama_models"]:
             print(f"  - {m}")
     else:
         print("\nOllama: No models loaded")
@@ -38,7 +38,7 @@ async def verify_gpu_before_vision():
     """Verify GPU status before vision operations."""
     status = await GPUResourceManager.check_memory_collision()
 
-    if status['ollama_models']:
+    if status["ollama_models"]:
         print(f"\n[INFO] Ollama: {status['ollama_models']}\n")
 
     return status
@@ -54,22 +54,15 @@ def list_providers():
 
 
 def list_tools():
-    """List available tools with schemas."""
-    print("Vision tools:")
-    vision_tools = ["analyze_image", "identify_objects", "read_text", "compare_images"]
-    for name in vision_tools:
-        schema = TOOL_SCHEMAS.get(name, {})
-        desc = schema.get("description", "No description")
-        print(f"  {name}")
-        print(f"    {desc}")
-        print()
+    """List available tools with schemas (derived from TOOL_SCHEMAS)."""
+    from src.tools import TOOL_SCHEMAS, register_all_tools
 
-    print("Processing tools:")
-    processing_tools = ["prepare_image", "get_image_info", "crop_image", "convert_image_format", "extract_object"]
-    for name in processing_tools:
-        schema = TOOL_SCHEMAS.get(name, {})
+    register_all_tools()
+    print(f"{len(TOOL_SCHEMAS)} tools available:\n")
+    for name, schema in TOOL_SCHEMAS.items():
         desc = schema.get("description", "No description")
-        print(f"  {name}")
+        title = schema.get("title", name)
+        print(f"  {name}  [{title}]")
         print(f"    {desc}")
         print()
 
@@ -104,15 +97,17 @@ async def analyze_image(args):
         print(f"Config error: {e.message}")
         return 1
 
-    debug = getattr(args, 'debug', False)
+    debug = getattr(args, "debug", False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     from src.utils import preprocess_to_bytes
+
     image_data = preprocess_to_bytes(args.image)
 
     prompt = args.prompt
     if args.detail_level:
         from src.prompts import get_vision_prompt
+
         prompt = get_vision_prompt("analyze_image", args.detail_level)
 
     try:
@@ -141,10 +136,11 @@ async def identify_objects(args):
         print(f"Config error: {e.message}")
         return 1
 
-    debug = getattr(args, 'debug', False)
+    debug = getattr(args, "debug", False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     from src.utils import preprocess_to_bytes
+
     image_data = preprocess_to_bytes(args.image)
 
     prompt = "Identify all objects in this image. List each object you see."
@@ -175,10 +171,11 @@ async def read_text(args):
         print(f"Config error: {e.message}")
         return 1
 
-    debug = getattr(args, 'debug', False)
+    debug = getattr(args, "debug", False)
     provider = ProviderFactory.get(config.provider, config, debug=debug)
 
     from src.utils import preprocess_to_bytes
+
     image_data = preprocess_to_bytes(args.image)
 
     if args.preserve_formatting:
@@ -405,7 +402,9 @@ def main():
     providers_parser.add_argument("action", nargs="?", choices=["list"], default="list")
 
     gpu_parser = subparsers.add_parser("gpu-status", help="Check GPU memory status (Ollama)")
-    gpu_parser.add_argument("--unload-ollama", metavar="MODEL", help="Unload a specific model from Ollama")
+    gpu_parser.add_argument(
+        "--unload-ollama", metavar="MODEL", help="Unload a specific model from Ollama"
+    )
 
     tools_parser = subparsers.add_parser("tools", help="List tools")
     tools_parser.add_argument("action", nargs="?", choices=["list"], default="list")
@@ -413,48 +412,79 @@ def main():
 
     analyze_parser = subparsers.add_parser("analyze", help="Analyze an image")
     analyze_parser.add_argument("--image", required=True, help="Path to image file")
-    analyze_parser.add_argument("--prompt", default="Describe this image in detail", help="Analysis prompt")
+    analyze_parser.add_argument(
+        "--prompt", default="Describe this image in detail", help="Analysis prompt"
+    )
     analyze_parser.add_argument("--model", help="Model to use")
-    analyze_parser.add_argument("--detail-level", choices=["brief", "standard", "detailed"], help="Detail level")
-    analyze_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
+    analyze_parser.add_argument(
+        "--detail-level", choices=["brief", "standard", "detailed"], help="Detail level"
+    )
+    analyze_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output (request/response/timing)"
+    )
 
     identify_parser = subparsers.add_parser("identify", help="Identify objects in an image")
     identify_parser.add_argument("--image", required=True, help="Path to image file")
-    identify_parser.add_argument("--include-count", action="store_true", help="Include object counts")
+    identify_parser.add_argument(
+        "--include-count", action="store_true", help="Include object counts"
+    )
     identify_parser.add_argument("--categories", help="Filter by categories (comma-separated)")
-    identify_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
+    identify_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output (request/response/timing)"
+    )
 
     readtext_parser = subparsers.add_parser("read-text", help="Extract text from an image")
     readtext_parser.add_argument("--image", required=True, help="Path to image file")
-    readtext_parser.add_argument("--preserve-formatting", action="store_true", help="Preserve text formatting")
+    readtext_parser.add_argument(
+        "--preserve-formatting", action="store_true", help="Preserve text formatting"
+    )
     readtext_parser.add_argument("--language-hint", help="Language hint (e.g., en, pt)")
-    readtext_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
+    readtext_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output (request/response/timing)"
+    )
 
     compare_parser = subparsers.add_parser("compare", help="Compare two images")
     compare_parser.add_argument("--image1", required=True, help="Path to first image")
     compare_parser.add_argument("--image2", required=True, help="Path to second image")
-    compare_parser.add_argument("--compare-type", choices=["similarities", "differences", "both"], default="both", help="What to compare")
-    compare_parser.add_argument("--debug", action="store_true", help="Enable debug output (request/response/timing)")
+    compare_parser.add_argument(
+        "--compare-type",
+        choices=["similarities", "differences", "both"],
+        default="both",
+        help="What to compare",
+    )
+    compare_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output (request/response/timing)"
+    )
 
     extract_parser = subparsers.add_parser(
         "extract",
         help="Locate and crop an object from an image using AI vision",
     )
     extract_parser.add_argument("--image", required=True, help="Path to image file")
-    extract_parser.add_argument("--object", required=True, help="Description of the object to extract (e.g., 'the red car', 'person on the left')")
-    extract_parser.add_argument("--output-dir", help="Directory to save cropped image (default: test_images/)")
+    extract_parser.add_argument(
+        "--object",
+        required=True,
+        help="Description of the object to extract (e.g., 'the red car', 'person on the left')",
+    )
+    extract_parser.add_argument(
+        "--output-dir", help="Directory to save cropped image (default: test_images/)"
+    )
     extract_parser.add_argument("--output", help="Exact output filename (default: auto-generated)")
     extract_parser.add_argument("--debug", action="store_true", help="Enable debug output")
 
     info_parser = subparsers.add_parser("info", help="Get image info")
     info_parser.add_argument("--image", required=True, help="Path to image file")
-    info_parser.add_argument("--include-exif", action="store_true", default=True, help="Include EXIF metadata")
+    info_parser.add_argument(
+        "--include-exif", action="store_true", default=True, help="Include EXIF metadata"
+    )
 
     prepare_parser = subparsers.add_parser("prepare", help="Prepare/resize an image")
     prepare_parser.add_argument("--image", required=True, help="Path to image file")
     prepare_parser.add_argument("--max-width", type=int, default=1024, help="Maximum width")
     prepare_parser.add_argument("--max-height", type=int, default=1024, help="Maximum height")
-    prepare_parser.add_argument("--format", choices=["JPEG", "PNG", "WEBP"], default="JPEG", help="Output format")
+    prepare_parser.add_argument(
+        "--format", choices=["JPEG", "PNG", "WEBP"], default="JPEG", help="Output format"
+    )
     prepare_parser.add_argument("--quality", type=int, default=85, help="Quality (1-100)")
     prepare_parser.add_argument("--output", help="Output file path")
 
@@ -468,13 +498,22 @@ def main():
 
     convert_parser = subparsers.add_parser("convert", help="Convert image format")
     convert_parser.add_argument("--image", required=True, help="Path to image file")
-    convert_parser.add_argument("--format", choices=["JPEG", "PNG", "WEBP", "BMP", "GIF"], required=True, help="Target format")
+    convert_parser.add_argument(
+        "--format",
+        choices=["JPEG", "PNG", "WEBP", "BMP", "GIF"],
+        required=True,
+        help="Target format",
+    )
     convert_parser.add_argument("--quality", type=int, default=85, help="Quality (1-100)")
     convert_parser.add_argument("--output", help="Output file path")
 
-    benchmark_parser = subparsers.add_parser("benchmark", help="Benchmark all providers with the same image")
+    benchmark_parser = subparsers.add_parser(
+        "benchmark", help="Benchmark all providers with the same image"
+    )
     benchmark_parser.add_argument("--image", required=True, help="Path to image file")
-    benchmark_parser.add_argument("--providers", default="all", help="Providers to test (comma-separated or 'all')")
+    benchmark_parser.add_argument(
+        "--providers", default="all", help="Providers to test (comma-separated or 'all')"
+    )
 
     args = parser.parse_args()
 
@@ -553,14 +592,19 @@ async def benchmark_cmd(args):
 
     providers_to_test = []
     if args.providers == "all":
-        providers_to_test = ["ollama", "openrouter", "openai", "lmstudio"]
+        providers_to_test = ProviderFactory.list_providers()
     else:
         providers_to_test = [p.strip() for p in args.providers.split(",")]
+        available = set(ProviderFactory.list_providers())
+        providers_to_test = [p for p in providers_to_test if p in available]
+        skipped = set(args.providers.split(",")) - available
+        if skipped:
+            print(f"[SKIP] Unknown/unimplemented providers: {sorted(skipped)}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"BENCHMARK: Testing {len(providers_to_test)} providers")
     print(f"Image: {args.image}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     results = []
 
@@ -591,13 +635,15 @@ async def benchmark_cmd(args):
             result = await provider.analyze(image_data, prompt)
             elapsed = time.time() - start_time
 
-            results.append({
-                "provider": provider_name,
-                "model": config.default_model or "unknown",
-                "time": elapsed,
-                "success": True,
-                "result_preview": result[:200] + "..." if len(result) > 200 else result,
-            })
+            results.append(
+                {
+                    "provider": provider_name,
+                    "model": config.default_model or "unknown",
+                    "time": elapsed,
+                    "success": True,
+                    "result_preview": result[:200] + "..." if len(result) > 200 else result,
+                }
+            )
 
             print(f"  Model: {config.default_model or 'unknown'}")
             print(f"  Time: {elapsed:.2f}s")
@@ -611,17 +657,19 @@ async def benchmark_cmd(args):
             print(f"  [SKIP] Config error: {e.message}")
         except Exception as e:
             print(f"  [ERROR] {e}")
-            results.append({
-                "provider": provider_name,
-                "model": "unknown",
-                "time": 0,
-                "success": False,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "provider": provider_name,
+                    "model": "unknown",
+                    "time": 0,
+                    "success": False,
+                    "error": str(e),
+                }
+            )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BENCHMARK SUMMARY")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"{'Provider':<15} {'Model':<30} {'Time':<10}")
     print("-" * 60)
 
@@ -631,7 +679,7 @@ async def benchmark_cmd(args):
         else:
             print(f"{r['provider']:<15} {'ERROR':<30} {r['error'][:30]}")
 
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     return 0
 

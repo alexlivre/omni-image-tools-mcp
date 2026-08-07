@@ -123,6 +123,7 @@ async def test_compare_images_sends_all_preprocessed(tmp_path):
         patch.object(compare_module, "get_config") as cfg,
     ):
         provider = AsyncMock(compare=fake_compare)
+        provider.is_local = False
         factory_cls.get.return_value = provider
         cfg.return_value.provider = "openrouter"
         await compare_module.compare_images(image_paths=[str(a), str(b)])

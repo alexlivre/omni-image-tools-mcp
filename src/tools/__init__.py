@@ -4,9 +4,16 @@ import importlib
 from typing import Any, Callable
 
 
-TOOL_SCHEMAS = {
+TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     "analyze_image": {
         "name": "analyze_image",
+        "title": "Analyze Image",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to analyze an image with a custom prompt to get detailed information about its contents. IMPORTANT: For local providers (Ollama), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
@@ -36,6 +43,13 @@ TOOL_SCHEMAS = {
     },
     "identify_objects": {
         "name": "identify_objects",
+        "title": "Identify Objects",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to identify and locate objects in an image. IMPORTANT: For local providers (Ollama), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
@@ -64,6 +78,13 @@ TOOL_SCHEMAS = {
     },
     "read_text": {
         "name": "read_text",
+        "title": "Read Text (OCR)",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to extract text from an image (OCR). IMPORTANT: For local providers (Ollama), only 1 image per request is supported due to GPU memory limits. For online providers (OpenRouter, OpenAI), multiple images are supported. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
@@ -87,6 +108,13 @@ TOOL_SCHEMAS = {
     },
     "compare_images": {
         "name": "compare_images",
+        "title": "Compare Images",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to compare multiple images (2-10) and identify similarities or differences between them. Pass a list of image paths to compare all images at once. IMPORTANT: For local providers (Ollama), this tool requires processing images sequentially and may be slower or less accurate. For online providers (OpenRouter, OpenAI), images are processed together for best results. Call get_provider_info first to check current provider limits.",
         "inputSchema": {
             "type": "object",
@@ -110,6 +138,13 @@ TOOL_SCHEMAS = {
     },
     "prepare_image": {
         "name": "prepare_image",
+        "title": "Prepare Image",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to prepare an image for analysis (resize, optimize).",
         "inputSchema": {
             "type": "object",
@@ -145,6 +180,13 @@ TOOL_SCHEMAS = {
     },
     "get_image_info": {
         "name": "get_image_info",
+        "title": "Get Image Info",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to get metadata information about an image.",
         "inputSchema": {
             "type": "object",
@@ -164,6 +206,13 @@ TOOL_SCHEMAS = {
     },
     "crop_image": {
         "name": "crop_image",
+        "title": "Crop Image",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to crop a specific region from an image.",
         "inputSchema": {
             "type": "object",
@@ -194,6 +243,13 @@ TOOL_SCHEMAS = {
     },
     "convert_image_format": {
         "name": "convert_image_format",
+        "title": "Convert Image Format",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Use when you need to convert an image from one format to another.",
         "inputSchema": {
             "type": "object",
@@ -218,6 +274,13 @@ TOOL_SCHEMAS = {
     },
     "get_provider_info": {
         "name": "get_provider_info",
+        "title": "Get Provider Info",
+        "annotations": {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "description": "Get information about the currently configured vision provider including its type (local/online), image processing limits, and capabilities. Use this to understand what the current provider supports before calling vision tools.",
         "inputSchema": {
             "type": "object",
@@ -227,6 +290,13 @@ TOOL_SCHEMAS = {
     },
     "download_image": {
         "name": "download_image",
+        "title": "Download Image",
+        "annotations": {
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
         "description": "Download an image from a URL and save it locally. Use this when you need to analyze an image from the web. Returns the local path you can use with other vision tools.",
         "inputSchema": {
             "type": "object",
@@ -241,6 +311,13 @@ TOOL_SCHEMAS = {
     },
     "extract_object": {
         "name": "extract_object",
+        "title": "Extract Object",
+        "annotations": {
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
         "description": "Locate and crop a specific object from an image. Use this to extract objects like license plates, faces, logos, or any element described in text. Uses AI vision to find the object, then crops and saves the region automatically.",
         "inputSchema": {
             "type": "object",
@@ -314,20 +391,14 @@ def register_all_tools() -> None:
     }
 
     for tool_name, tool_schema in TOOL_SCHEMAS.items():
-        func = tool_functions.get(tool_name)
-        if func is None:
-
-            def create_placeholder(name: str):
-                async def placeholder(**kwargs):
-                    return {"error": f"Tool '{name}' not yet implemented"}
-
-                return placeholder
-
-            func = create_placeholder(tool_name)
-
+        if tool_name not in tool_functions:
+            raise RuntimeError(
+                f"No implementation registered for tool '{tool_name}'. "
+                f"Add it to tool_functions in register_all_tools()."
+            )
         ToolRegistry.register(
             name=tool_name,
-            func=func,
+            func=tool_functions[tool_name],
             schema=tool_schema,
         )
 

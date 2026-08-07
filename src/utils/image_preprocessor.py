@@ -51,7 +51,7 @@ def _resize_if_needed(img: Image.Image) -> Image.Image:
         return img
     scale = MAX_LONGEST_SIDE / longest
     new_size = (max(1, int(w * scale)), max(1, int(h * scale)))
-    return img.resize(new_size, Image.LANCZOS)
+    return img.resize(new_size, Image.Resampling.LANCZOS)
 
 
 def _to_jpeg_bytes(img: Image.Image) -> bytes:

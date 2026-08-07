@@ -141,3 +141,17 @@ Editar `src/prompts/vision.yaml` — não precisa mexer código.
 - [x] Integrar em `analyze_image`, `read_text`, `identify_objects`, `compare_images`
 - [x] Integrar em `extract_object` (preprocessa input, crop do original)
 - [x] Documentar em `docs/PROCESSING.md` e `SPEC.md`
+
+### Fase 11: Hardening de Segurança e Protocolo
+- [x] `src/utils/security.py`: SSRF (`is_safe_url`), path resolution (`resolve_safe_path`), `clamp`, limites
+- [x] `download_image`: bloqueio SSRF, redirects revalidados, download streaming com teto 20MB
+- [x] `server.py`: `resolve_safe_path` no preflight de `image_path`/`image_paths`; `isError=true` em falhas de tool; exceções específicas
+- [x] Annotations + `title` em todas as tools; `tools/list` determinístico (descrições estáticas)
+- [x] `instructions` server-level (mitigação de prompt injection)
+- [x] `get_image_info`: EXIF desligado por padrão + aviso de GPS
+- [x] Debug dos providers roteado para stderr (não corrompe stdio)
+- [x] `output_dir` configurável (`OMNI_OUTPUT_DIR`, default `outputs/`)
+- [x] DRY: `OpenAICompatibleProvider` (OpenAI/OpenRouter); `is_local` como atributo do provider
+- [x] Remover placeholder morto do registry; CLI `list_tools` derivado dos schemas; benchmark filtra providers
+- [x] `with` em `Image.open`/`open` (sem resource leak); constantes nomeadas
+- [x] Testes: security (26), protocolo (13), config, providers, download; mypy verde; coverage configurado

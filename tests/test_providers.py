@@ -1,0 +1,108 @@
+"""Tests for providers: validate_image, model allowlist, is_local attributes."""
+
+from unittest.mock import patch
+
+import pytest
+
+from src.config import Config
+from src.providers import OllamaProvider, OpenAIProvider, OpenRouterProvider
+
+
+def _ollama_config(monkeypatch, **overrides):
+    monkeypatch.setenv("OMNI_VISION_PROVIDER", "ollama")
+    for k, v in overrides.items():
+        monkeypatch.setenv(k, str(v))
+    return Config.from_env()
+
+
+class TestValidateImage:
+    def _prov(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "ollama")
+        monkeypatch.setenv("OLLAMA_ALLOWED_MODELS", "qwen3-vl:4b,qwen3-vl:2b")
+        return OllamaProvider(Config.from_env())
+
+    def test_empty_is_invalid(self, monkeypatch):
+        valid, _ = self._prov(monkeypatch).validate_image(b"")
+        assert valid is False
+
+    def test_too_large_is_invalid(self, monkeypatch):
+        valid, msg = self._prov(monkeypatch).validate_image(b"x" * (10 * 1024 * 1024 + 1))
+        assert valid is False
+        assert "too large" in msg.lower()
+
+    def test_normal_is_valid(self, monkeypatch):
+        valid, _ = self._prov(monkeypatch).validate_image(b"x" * 1024)
+        assert valid is True
+
+
+class TestOllamaAllowlist:
+    def test_validate_model_rejects_unknown(self, monkeypatch):
+        cfg = _ollama_config(monkeypatch, OLLAMA_ALLOWED_MODELS="qwen3-vl:4b,qwen3-vl:2b")
+        prov = OllamaProvider(cfg)
+        with pytest.raises(ValueError, match="not in allowed"):
+            prov.validate_model("huge-100b")
+
+    def test_validate_model_uses_default(self, monkeypatch):
+        cfg = _ollama_config(monkeypatch, OLLAMA_ALLOWED_MODELS="qwen3-vl:4b,qwen3-vl:2b")
+        prov = OllamaProvider(cfg)
+        assert prov.validate_model(None) in cfg.ollama.allowed_models
+
+    def test_validate_model_allows_listed(self, monkeypatch):
+        cfg = _ollama_config(monkeypatch, OLLAMA_ALLOWED_MODELS="qwen3-vl:4b,qwen3-vl:2b")
+        prov = OllamaProvider(cfg)
+        assert prov.validate_model("qwen3-vl:2b") == "qwen3-vl:2b"
+
+
+class TestProviderAttributes:
+    def test_ollama_is_local(self, monkeypatch):
+        prov = OllamaProvider(_ollama_config(monkeypatch))
+        assert prov.is_local is True
+        assert prov.image_limit_per_request == 1
+
+    def test_openrouter_is_cloud(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "openrouter")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        prov = OpenRouterProvider(Config.from_env())
+        assert prov.is_local is False
+        assert prov.image_limit_per_request is None
+
+    def test_openai_is_cloud(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "openai")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        prov = OpenAIProvider(Config.from_env())
+        assert prov.is_local is False
+        assert prov.endpoint.startswith("https://api.openai.com")
+
+
+class TestOpenAICompatibleCompare:
+    @pytest.mark.asyncio
+    async def test_compare_sends_all_images(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "openrouter")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        prov = OpenRouterProvider(Config.from_env())
+
+        captured = {}
+
+        class FakeResp:
+            status_code = 200
+
+            def json(self):
+                return {"choices": [{"message": {"content": "diff"}}]}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, headers, json):
+                captured["content_parts"] = len(json["messages"][0]["content"])
+                captured["url"] = url
+                return FakeResp()
+
+        with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=FakeClient()):
+            result = await prov.compare([b"img1", b"img2"], "compare")
+        assert result == "diff"
+        assert captured["content_parts"] == 3
+        assert "openrouter.ai" in captured["url"]

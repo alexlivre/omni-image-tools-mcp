@@ -3,26 +3,27 @@
 from typing import Any
 
 from ...config import get_config
+from ...providers import ProviderFactory
 
 
 def get_provider_info() -> dict[str, Any]:
     """Get information about the current provider and its capabilities.
 
-    Returns:
-        Dict with provider info including name, type, and image limits
+    Reads provider metadata (is_local, image_limit) from the provider instance
+    rather than hardcoding provider names, so new providers stay consistent.
     """
     config = get_config()
-
-    provider = config.provider
-    is_local = provider == "ollama"
+    provider = ProviderFactory.get(config.provider, config, debug=False)
+    is_local = provider.is_local
+    image_limit = provider.image_limit_per_request
 
     info = {
-        "provider": provider,
+        "provider": config.provider,
         "type": "local" if is_local else "online",
-        "image_limit_per_request": 1 if is_local else None,
-        "supports_multiple_images": not is_local,
+        "image_limit_per_request": image_limit,
+        "supports_multiple_images": image_limit is None or image_limit > 1,
         "default_model": config.default_model or "unknown",
-        "description": _get_provider_description(provider, is_local),
+        "description": _get_provider_description(config.provider, is_local, image_limit),
         "limits": {
             "local_providers": {
                 "image_limit_per_request": 1,
@@ -47,7 +48,7 @@ def get_provider_info() -> dict[str, Any]:
     }
 
 
-def _get_provider_description(provider: str, is_local: bool) -> str:
+def _get_provider_description(provider: str, is_local: bool, image_limit: int | None) -> str:
     """Get human-readable provider description."""
     descriptions = {
         "ollama": "Ollama local vision model",
@@ -56,7 +57,7 @@ def _get_provider_description(provider: str, is_local: bool) -> str:
     }
     base = descriptions.get(provider, provider)
     if is_local:
-        base += " | LIMIT: 1 image/request (GPU memory) | compare: sequential"
+        base += f" | LIMIT: {image_limit} image/request (GPU memory) | compare: sequential"
     else:
         base += " | No image limit | compare: parallel"
     return base

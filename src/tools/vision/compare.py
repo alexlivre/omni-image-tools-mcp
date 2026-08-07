@@ -2,16 +2,11 @@
 
 from typing import Any
 
-from ...config import get_config, ProviderType
+from ...config import get_config
 from ...providers import ProviderFactory
 from ...prompts import get_vision_prompt
 from ...utils import preprocess_to_bytes
 from ...utils.gpu_memory import GPUResourceManager
-
-
-def _is_local_provider(provider: ProviderType) -> bool:
-    """Check if provider is local (has GPU memory limits)."""
-    return provider == "ollama"
 
 
 async def compare_images(
@@ -40,14 +35,13 @@ async def compare_images(
 
     config = get_config()
     provider = ProviderFactory.get(config.provider, config, debug=False)
+    is_local = provider.is_local
 
     image_datas = [preprocess_to_bytes(p) for p in image_paths]
 
     prompt = get_vision_prompt("compare_images", compare_type)
 
     await GPUResourceManager.ensure_single_provider(config.provider)
-
-    is_local = _is_local_provider(config.provider)
 
     if is_local and len(image_datas) > 1:
         result = await _compare_sequential(provider, image_datas, compare_type, prompt)
@@ -93,6 +87,6 @@ Based on these descriptions, {base_prompt}
 
 Provide a clear, structured comparison."""
 
-    comparison_result = await provider.analyze(None, comparison_prompt, None)
+    comparison_result: str = await provider.analyze(None, comparison_prompt, None)
 
     return comparison_result

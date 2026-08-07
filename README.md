@@ -97,7 +97,7 @@ uv run python scripts/cli.py extract --image carro.jpg --object "license plate"
 **O que acontece por dentro:**
 1. A IA localiza o objeto na imagem → coordenadas
 2. O sistema recorta automaticamente a região
-3. Salva o recorte em `test_images/`
+3. Salva o recorte em `outputs/` (ou o diretório definido por `OMNI_OUTPUT_DIR`)
 
 Útil para: placas de carro, rostos, logotipos, textos específicos, qualquer objeto visível.
 
@@ -143,6 +143,15 @@ set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
 | `OMNI_VISION_DEFAULT_MODEL` | ❌ Não | Varia | Qual modelo usar |
 | `OMNI_VISION_TIMEOUT` | ❌ Não | 120s | Tempo máximo de espera |
 | `OLLAMA_ALLOWED_MODELS` | ❌ Não | `qwen3-vl:4b,qwen3-vl:2b` | Modelos permitidos no Ollama (CSV) |
+| `OMNI_OUTPUT_DIR` | ❌ Não | `./outputs` | Onde `extract_object`/`download_image` gravam arquivos |
+| `OMNI_ALLOWED_DIRS` | ❌ Não | (vazio = sem sandbox) | Lista de diretórios permitidos para `image_path` (separados por `;`) — proteção contra path traversal |
+
+### 🔒 Segurança embutida
+
+- **SSRF:** `download_image` bloqueia IPs privados/loopback/link-local (ex.: `169.254.169.254`), hosts que resolvam para eles, e revalida cada redirect.
+- **Path traversal:** todos os `image_path` são resolvidos (`resolve()` segue symlinks); com `OMNI_ALLOWED_DIRS` configurado, caminhos fora do sandbox são rejeitados.
+- **Downloads limitados:** download é em streaming com teto de 20 MB (Content-Length + contador de bytes).
+- **Privacidade:** `get_image_info` retorna EXIF desligado por padrão (`include_exif`); se ativado e houver GPS, um aviso é adicionado.
 
 ---
 

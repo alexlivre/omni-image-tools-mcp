@@ -7,8 +7,12 @@ from typing import Any
 class VisionProvider(ABC):
     """Abstract base class for vision providers."""
 
-    def __init__(self, config: Any):
+    is_local: bool = False
+    image_limit_per_request: int | None = None
+
+    def __init__(self, config: Any, debug: bool = False):
         self.config = config
+        self.debug = debug
 
     @abstractmethod
     async def analyze(
