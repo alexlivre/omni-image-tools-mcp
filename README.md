@@ -157,6 +157,8 @@ set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
 
 ## 🔌 Integração com Opencode
 
+> **Nota (v0.6.0):** o servidor agora roda sobre o **FastMCP**, o que adiciona relatório de progresso, saída estruturada (`structuredContent`/`outputSchema`) e timeouts por ferramenta. O console script `omni-image-tools` usa o novo entry point `src.server_fastmcp:main`. O antigo `src/server.py` permanece como fallback (`python -m src.server`) por uma release.
+
 Adicione no arquivo `~/.config/opencode/opencode.json`:
 
 ```json

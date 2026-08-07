@@ -57,7 +57,7 @@ Homepage = "https://github.com/alexlivre/omni-image-tools-mcp"
 Source = "https://github.com/alexlivre/omni-image-tools-mcp"
 
 [project.scripts]
-omni-image-tools = "src.server:main"
+omni-image-tools = "src.server_fastmcp:main"
 
 [tool.setuptools]
 packages = ["src"]
