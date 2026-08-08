@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from .errors import ConfigError
 
 
-ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio"]
+ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio", "minimax"]
 
 
 class OllamaConfig(BaseModel):
@@ -30,6 +30,12 @@ class LMStudioConfig(BaseModel):
     default_model: str = Field(default="qwen2.5-vl-7b-instruct")
 
 
+class MinimaxConfig(BaseModel):
+    api_key: str
+    base_url: str = Field(default="https://api.minimax.io/v1")
+    default_model: str = Field(default="MiniMax-M3")
+
+
 class Config(BaseModel):
     provider: ProviderType
     api_key: str | None = None
@@ -42,6 +48,7 @@ class Config(BaseModel):
     openrouter: OpenRouterConfig | None = None
     openai: OpenAIConfig | None = None
     lmstudio: LMStudioConfig | None = None
+    minimax: MinimaxConfig | None = None
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -52,13 +59,15 @@ class Config(BaseModel):
                 missing_key="OMNI_VISION_PROVIDER",
             )
 
-        if provider not in ["ollama", "openrouter", "openai", "lmstudio"]:
+        if provider not in ["ollama", "openrouter", "openai", "lmstudio", "minimax"]:
             raise ConfigError(
-                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai, lmstudio",
+                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai, lmstudio, minimax",
             )
 
         api_key = os.getenv("OMNI_VISION_API_KEY")
-        if not api_key and provider in ["openrouter", "openai"]:
+        if provider == "minimax" and not api_key:
+            api_key = os.getenv("MINIMAX_API_KEY")
+        if not api_key and provider in ["openrouter", "openai", "minimax"]:
             raise ConfigError(
                 message=f"OMNI_VISION_API_KEY is required for provider: {provider}",
                 missing_key="OMNI_VISION_API_KEY",
@@ -116,6 +125,12 @@ class Config(BaseModel):
             config.lmstudio = LMStudioConfig(
                 base_url=os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234"),
                 default_model=config.default_model or "qwen2.5-vl-7b-instruct",
+            )
+        elif provider == "minimax":
+            config.minimax = MinimaxConfig(
+                api_key=api_key or "",
+                base_url=os.getenv("MINIMAX_BASE_URL", "https://api.minimax.io/v1").rstrip("/"),
+                default_model=config.default_model or "MiniMax-M3",
             )
 
         return config

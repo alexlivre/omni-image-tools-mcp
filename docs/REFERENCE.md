@@ -40,7 +40,7 @@ Análise do repo clonado: `ollama-vision-mcp`
 
 ## Diferenças para Omni-Vision
 
-1. **Provedor**: Ollama local vs Multi-provider (OpenRouter, OpenAI, Ollama, LM Studio)
+1. **Provedor**: Ollama local vs Multi-provider (OpenRouter, OpenAI, Ollama, LM Studio, MiniMax)
 2. **Auth**: Sem auth vs Bearer token (cloud)
 3. **API format**: `/api/generate` vs `/api/v1/chat/completions`
 4. **Image format**: `images: [base64]` vs `content: [{type: 'image_url'}]`

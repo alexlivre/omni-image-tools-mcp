@@ -55,6 +55,7 @@ def _get_provider_description(provider: str, is_local: bool, image_limit: int | 
         "openrouter": "OpenRouter cloud API",
         "openai": "OpenAI cloud API",
         "lmstudio": "LM Studio local server",
+        "minimax": "MiniMax cloud API (MiniMax-M3 multimodal)",
     }
     base = descriptions.get(provider, provider)
     if is_local:

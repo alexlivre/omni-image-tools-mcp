@@ -2,7 +2,7 @@
 
 Um servidor MCP que dá **visão computacional** para modelos de IA. Ele permite que a IA "veja" imagens: descrever, comparar, extrair texto, recortar objetos e muito mais.
 
-**11 ferramentas** · **3 provedores** · **Funciona com Opencode, Claude, Cursor**
+**11 ferramentas** · **4 provedores** · **Funciona com Opencode, Claude, Cursor**
 
 ---
 
@@ -134,12 +134,31 @@ set OMNI_VISION_API_KEY=sk-or-v1-sua-chave-aqui
 set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
 ```
 
+### Opção D: MiniMax (nuvem, MiniMax-M3 multimodal)
+
+> Requer: [API key da MiniMax](https://platform.minimax.io). Suporta as duas plataformas:
+> - **Internacional (minimax.io)** — padrão, sem config extra
+> - **China (minimaxi.com)** — defina `MINIMAX_BASE_URL=https://api.minimaxi.com/v1`
+
+```bash
+# Internacional (padrão)
+set OMNI_VISION_PROVIDER=minimax
+set MINIMAX_API_KEY=sua-chave-aqui
+
+# China (opcional)
+set MINIMAX_BASE_URL=https://api.minimaxi.com/v1
+```
+
+> 💡 A chave pode vir de `OMNI_VISION_API_KEY` ou `MINIMAX_API_KEY` (esta última é usada como fallback, útil se já estiver nas variáveis de ambiente do sistema).
+
 ### Todas as opções
 
 | Variável | Obrigatório | Padrão | O que faz |
 |----------|-------------|--------|-----------|
-| `OMNI_VISION_PROVIDER` | ✅ Sim | — | `ollama`, `openrouter` ou `openai` |
+| `OMNI_VISION_PROVIDER` | ✅ Sim | — | `ollama`, `openrouter`, `openai`, `lmstudio` ou `minimax` |
 | `OMNI_VISION_API_KEY` | Só nuvem | — | Sua chave do provedor |
+| `MINIMAX_API_KEY` | Fallback do MiniMax | — | Chave MiniMax usada se `OMNI_VISION_API_KEY` não existir |
+| `MINIMAX_BASE_URL` | ❌ Não | `https://api.minimax.io/v1` | Endpoint MiniMax (China: `https://api.minimaxi.com/v1`) |
 | `OMNI_VISION_DEFAULT_MODEL` | ❌ Não | Varia | Qual modelo usar |
 | `OMNI_VISION_TIMEOUT` | ❌ Não | 120s | Tempo máximo de espera |
 | `OLLAMA_ALLOWED_MODELS` | ❌ Não | `qwen3-vl:4b,qwen3-vl:2b` | Modelos permitidos no Ollama (CSV) |
@@ -211,6 +230,20 @@ Requer [API key](https://openrouter.ai/keys).
 }
 ```
 
+#### MiniMax (nuvem, MiniMax-M3)
+
+Requer [API key da MiniMax](https://platform.minimax.io).
+
+```json
+"environment": {
+  "OMNI_VISION_PROVIDER": "minimax",
+  "MINIMAX_API_KEY": "{env:MINIMAX_API_KEY}",
+  "OMNI_VISION_DEFAULT_MODEL": "MiniMax-M3"
+}
+```
+
+Para a plataforma China, adicione `"MINIMAX_BASE_URL": "https://api.minimaxi.com/v1"`.
+
 > **Lembrete:** O `command` deve apontar para o `python.exe` da pasta `.venv` do projeto. Depois de alterar, **reinicie o opencode**.
 
 Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](https://cursor.sh).
@@ -253,7 +286,8 @@ src/
 ├── providers/
 │   ├── ollama.py          # Conexão com Ollama (local)
 │   ├── openrouter.py      # Conexão com OpenRouter (nuvem)
-│   └── openai.py          # Conexão com OpenAI (nuvem)
+│   ├── openai.py          # Conexão com OpenAI (nuvem)
+│   └── minimax.py         # Conexão com MiniMax (nuvem, M3)
 ├── tools/
 │   ├── vision/            # Ferramentas de visão (IA)
 │   └── processing/        # Ferramentas de processamento (PIL)

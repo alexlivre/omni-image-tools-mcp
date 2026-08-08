@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from src.config import Config
-from src.providers import OllamaProvider, OpenAIProvider, OpenRouterProvider
+from src.providers import MinimaxProvider, OllamaProvider, OpenAIProvider, OpenRouterProvider
 
 
 def _ollama_config(monkeypatch, **overrides):
@@ -241,6 +241,117 @@ def test_lmstudio_provider_is_local(monkeypatch):
     assert prov.is_local is True
     assert prov.image_limit_per_request == 1
     assert prov.endpoint == "http://localhost:1234/v1/chat/completions"
+
+
+class TestMinimaxProvider:
+    def _prov(self, monkeypatch, base_url="https://api.minimax.io/v1", model=None):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        if model:
+            monkeypatch.setenv("OMNI_VISION_DEFAULT_MODEL", model)
+        cfg = Config.from_env()
+        if base_url:
+            monkeypatch.setenv("MINIMAX_BASE_URL", base_url)
+            cfg = Config.from_env()
+        return MinimaxProvider(cfg)
+
+    def test_minimax_is_cloud(self, monkeypatch):
+        prov = self._prov(monkeypatch)
+        assert prov.is_local is False
+        assert prov.image_limit_per_request is None
+        assert prov.endpoint == "https://api.minimax.io/v1/chat/completions"
+
+    def test_minimax_china_base_url(self, monkeypatch):
+        prov = self._prov(monkeypatch, base_url="https://api.minimaxi.com/v1")
+        assert prov.endpoint == "https://api.minimaxi.com/v1/chat/completions"
+
+    def test_minimax_default_model(self, monkeypatch):
+        prov = self._prov(monkeypatch)
+        assert prov.default_model == "MiniMax-M3"
+
+    def test_minimax_custom_model(self, monkeypatch):
+        prov = self._prov(monkeypatch, model="MiniMax-M2.7")
+        assert prov.default_model == "MiniMax-M2.7"
+
+    @pytest.mark.asyncio
+    async def test_minimax_payload_has_thinking_disabled(self, monkeypatch):
+        prov = self._prov(monkeypatch)
+        captured = {}
+
+        class FakeResp:
+            status_code = 200
+
+            def json(self):
+                return {"choices": [{"message": {"content": "ok"}}]}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, headers, json):
+                captured["payload"] = json
+                return FakeResp()
+
+        with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=FakeClient()):
+            await prov.analyze(b"img", "prompt")
+        assert captured["payload"]["thinking"] == {"type": "disabled"}
+        assert captured["payload"]["model"] == "MiniMax-M3"
+
+    @pytest.mark.asyncio
+    async def test_minimax_strips_think_blocks(self, monkeypatch):
+        prov = self._prov(monkeypatch)
+
+        class FakeResp:
+            status_code = 200
+
+            def json(self):
+                content = "<think>Let me analyze...</think>The image shows a cat."
+                return {"choices": [{"message": {"content": content}}]}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, headers, json):
+                return FakeResp()
+
+        with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=FakeClient()):
+            result = await prov.analyze(b"img", "prompt")
+        assert result == "The image shows a cat."
+
+    @pytest.mark.asyncio
+    async def test_minimax_base_resp_error_raises(self, monkeypatch):
+        prov = self._prov(monkeypatch)
+
+        class FakeResp:
+            status_code = 200
+
+            def json(self):
+                return {"base_resp": {"status_code": 1004, "status_msg": "bad key"}}
+
+            @property
+            def text(self):
+                return ""
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, headers, json):
+                return FakeResp()
+
+        with patch("src.providers.openai_compatible.httpx.AsyncClient", return_value=FakeClient()):
+            with pytest.raises(httpx.HTTPError, match="1004"):
+                await prov.analyze(b"img", "prompt")
 
 
 @pytest.mark.asyncio

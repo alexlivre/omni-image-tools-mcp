@@ -9,6 +9,7 @@ e o versionamento segue o [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- Provider MiniMax (MiniMax-M3 multimodal) com suporte a minimax.io e minimaxi.com (China) via `MINIMAX_BASE_URL`.
 - CI workflow (GitHub Actions: ruff, format, mypy, pytest com gate de 70% de cobertura).
 - Servidor FastMCP (`src/server_fastmcp.py`) com relatório de progresso e `processing_time_ms`.
 - Provider LM Studio.

@@ -50,6 +50,15 @@ class OpenAICompatibleProvider(VisionProvider):
         primary = self._resolve_model(model)
         return list(dict.fromkeys([primary, *getattr(self.config, "fallback_models", [])]))
 
+    def _extra_payload_fields(self) -> dict[str, Any]:
+        """Provider-specific top-level payload fields (e.g. MiniMax thinking)."""
+        return {}
+
+    def _extract_text(self, result: dict[str, Any]) -> str:
+        """Extract assistant text from a Chat Completions response."""
+        content: str = result["choices"][0]["message"]["content"]
+        return content
+
     def _headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self.api_key}",
@@ -104,6 +113,7 @@ class OpenAICompatibleProvider(VisionProvider):
             payload = {
                 "model": current_model,
                 "messages": [{"role": "user", "content": content}],
+                **self._extra_payload_fields(),
             }
             start = time.time()
             try:
@@ -118,8 +128,7 @@ class OpenAICompatibleProvider(VisionProvider):
                     if response.status_code != 200:
                         raise httpx.HTTPError(self._masked_error(response))
                     result = response.json()
-                    text: str = result["choices"][0]["message"]["content"]
-                    return text
+                    return self._extract_text(result)
             except httpx.HTTPError as e:
                 if index < len(models) - 1:
                     logger.warning(
@@ -145,6 +154,7 @@ class OpenAICompatibleProvider(VisionProvider):
             payload = {
                 "model": current_model,
                 "messages": [{"role": "user", "content": parts}],
+                **self._extra_payload_fields(),
             }
             try:
                 async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -152,8 +162,7 @@ class OpenAICompatibleProvider(VisionProvider):
                     if response.status_code != 200:
                         raise httpx.HTTPError(self._masked_error(response))
                     result = response.json()
-                    text: str = result["choices"][0]["message"]["content"]
-                    return text
+                    return self._extract_text(result)
             except httpx.HTTPError as e:
                 if index < len(models) - 1:
                     logger.warning(

@@ -7,6 +7,7 @@ from .ollama import OllamaProvider
 from .openrouter import OpenRouterProvider
 from .openai import OpenAIProvider
 from .lmstudio import LMStudioProvider
+from .minimax import MinimaxProvider
 
 
 class ProviderFactory:
@@ -17,6 +18,7 @@ class ProviderFactory:
         "openrouter": OpenRouterProvider,
         "openai": OpenAIProvider,
         "lmstudio": LMStudioProvider,
+        "minimax": MinimaxProvider,
     }
 
     @classmethod
@@ -60,4 +62,5 @@ __all__ = [
     "OpenRouterProvider",
     "OpenAIProvider",
     "LMStudioProvider",
+    "MinimaxProvider",
 ]

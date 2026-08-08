@@ -16,6 +16,8 @@ def _clean_env(monkeypatch):
         "OLLAMA_AUTO_PULL",
         "OLLAMA_BASE_URL",
         "LMSTUDIO_BASE_URL",
+        "MINIMAX_BASE_URL",
+        "MINIMAX_API_KEY",
     ):
         monkeypatch.delenv(k, raising=False)
 
@@ -72,6 +74,51 @@ class TestCloudConfig:
         cfg = Config.from_env()
         assert cfg.openai is not None
         assert cfg.openai.api_key == "sk-test"
+
+
+class TestMinimaxConfig:
+    def test_minimax_requires_api_key(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        with pytest.raises(ConfigError) as exc:
+            Config.from_env()
+        assert exc.value.missing_key == "OMNI_VISION_API_KEY"
+
+    def test_minimax_uses_minimax_api_key_fallback(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("MINIMAX_API_KEY", "mm-key")
+        cfg = Config.from_env()
+        assert cfg.api_key == "mm-key"
+        assert cfg.minimax is not None
+        assert cfg.minimax.api_key == "mm-key"
+
+    def test_minimax_omni_key_takes_precedence(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "omni-key")
+        monkeypatch.setenv("MINIMAX_API_KEY", "mm-key")
+        cfg = Config.from_env()
+        assert cfg.api_key == "omni-key"
+
+    def test_minimax_defaults(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        cfg = Config.from_env()
+        assert cfg.minimax is not None
+        assert cfg.minimax.base_url == "https://api.minimax.io/v1"
+        assert cfg.minimax.default_model == "MiniMax-M3"
+
+    def test_minimax_china_base_url(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        monkeypatch.setenv("MINIMAX_BASE_URL", "https://api.minimaxi.com/v1")
+        cfg = Config.from_env()
+        assert cfg.minimax.base_url == "https://api.minimaxi.com/v1"
+
+    def test_minimax_custom_model(self, monkeypatch):
+        monkeypatch.setenv("OMNI_VISION_PROVIDER", "minimax")
+        monkeypatch.setenv("OMNI_VISION_API_KEY", "sk-test")
+        monkeypatch.setenv("OMNI_VISION_DEFAULT_MODEL", "MiniMax-M2.7")
+        cfg = Config.from_env()
+        assert cfg.minimax.default_model == "MiniMax-M2.7"
 
 
 class TestProviderValidation:
