@@ -1,21 +1,21 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "omni-image-tools-mcp"
-version = "0.5.0"
+version = "0.6.0"
 description = "MCP server with image tools (vision + processing) supporting multiple providers"
 authors = [
     {name = "Alex Borisov"}
 ]
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -25,10 +25,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Image Recognition",
     "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
-keywords = ["mcp", "vision", "computer-vision", "ai", "llm", "ollama", "openai", "openrouter"]
+keywords = ["mcp", "vision", "computer-vision", "ai", "llm", "ollama", "openai", "openrouter", "minimax", "multimodal"]
 
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.28.0,<2.0.0",
     "aiohttp>=3.8.0",
     "aiofiles>=23.0.0",
     "httpx",
@@ -47,6 +47,8 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "build>=1.0.0",
+    "twine>=5.0.0",
     "types-aiofiles>=23.0.0",
     "types-PyYAML>=6.0.0"
 ]
@@ -59,8 +61,12 @@ Source = "https://github.com/alexlivre/omni-image-tools-mcp"
 [project.scripts]
 omni-image-tools = "src.server_fastmcp:main"
 
-[tool.setuptools]
-packages = ["src"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+src = ["prompts/*.yaml"]
 
 [tool.black]
 line-length = 100

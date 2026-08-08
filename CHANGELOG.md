@@ -10,6 +10,7 @@ e o versionamento segue o [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Added
 
 - Provider MiniMax (MiniMax-M3 multimodal) com suporte a minimax.io e minimaxi.com (China) via `MINIMAX_BASE_URL`.
+- Preparação para publicação no PyPI: versão 0.6.0, `package-data` com prompts YAML, licença PEP 639, pin de `mcp<2`, deps `build`/`twine`.
 - CI workflow (GitHub Actions: ruff, format, mypy, pytest com gate de 70% de cobertura).
 - Servidor FastMCP (`src/server_fastmcp.py`) com relatório de progresso e `processing_time_ms`.
 - Provider LM Studio.
