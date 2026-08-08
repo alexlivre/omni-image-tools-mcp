@@ -62,13 +62,25 @@ async def _analyze(
     start: float,
     awaitable: Awaitable[dict[str, Any]],
     timeout: float | None,
+    op_name: str = "operation",
 ) -> dict[str, Any]:
-    """Run a tool body with progress reporting, timeout, and timing."""
+    """Run a tool body with progress reporting, timeout, and timing.
+
+    Converts FileNotFoundError (missing image) and asyncio.TimeoutError into
+    friendly error dicts instead of leaking raw exception text to the client.
+    """
     await _report_progress(ctx, 10, 100)
-    if timeout is None:
-        result = await awaitable
-    else:
-        result = await asyncio.wait_for(awaitable, timeout=timeout)
+    try:
+        if timeout is None:
+            result = await awaitable
+        else:
+            result = await asyncio.wait_for(awaitable, timeout=timeout)
+    except FileNotFoundError as e:
+        filename = getattr(e, "filename", None)
+        result = {"success": False, "error": f"Image not found: {filename or e}"}
+    except asyncio.TimeoutError:
+        suffix = f" after {timeout:g} seconds" if timeout else ""
+        result = {"success": False, "error": f"{op_name} timed out{suffix}"}
     await _report_progress(ctx, 100, 100)
     result["processing_time_ms"] = round((time.time() - start) * 1000)
     return result
@@ -159,7 +171,13 @@ def build_server() -> FastMCP:
         format: str = "JPEG",
         quality: int = 85,
     ) -> dict:
-        result = await _prepare_image(image_path, max_width, max_height, format, quality)
+        result = await _analyze(
+            None,
+            time.time(),
+            _prepare_image(image_path, max_width, max_height, format, quality),
+            None,
+            op_name="prepare_image",
+        )
         result.pop("output_data", None)
         return result
 
@@ -169,7 +187,13 @@ def build_server() -> FastMCP:
         annotations=_annotations("get_image_info"),
     )
     async def get_image_info(image_path: str, include_exif: bool = False) -> dict:
-        return await _get_image_info(image_path, include_exif)
+        return await _analyze(
+            None,
+            time.time(),
+            _get_image_info(image_path, include_exif),
+            None,
+            op_name="get_image_info",
+        )
 
     @mcp.tool(name="crop_image", title=_title("crop_image"), annotations=_annotations("crop_image"))
     async def crop_image(
@@ -179,7 +203,13 @@ def build_server() -> FastMCP:
         width: int,
         height: int,
     ) -> dict:
-        result = await _crop_image(image_path, x, y, width, height)
+        result = await _analyze(
+            None,
+            time.time(),
+            _crop_image(image_path, x, y, width, height),
+            None,
+            op_name="crop_image",
+        )
         result.pop("output_data", None)
         return result
 
@@ -193,7 +223,13 @@ def build_server() -> FastMCP:
         output_format: str,
         quality: int = 85,
     ) -> dict:
-        result = await _convert_image_format(image_path, output_format, quality)
+        result = await _analyze(
+            None,
+            time.time(),
+            _convert_image_format(image_path, output_format, quality),
+            None,
+            op_name="convert_image_format",
+        )
         result.pop("output_data", None)
         return result
 
@@ -203,7 +239,13 @@ def build_server() -> FastMCP:
         annotations=_annotations("download_image"),
     )
     async def download_image(url: str) -> dict:
-        return await asyncio.wait_for(_download_image(url), timeout=_DOWNLOAD_TIMEOUT)
+        return await _analyze(
+            None,
+            time.time(),
+            _download_image(url),
+            _DOWNLOAD_TIMEOUT,
+            op_name="download_image",
+        )
 
     @mcp.tool(
         name="extract_object",
