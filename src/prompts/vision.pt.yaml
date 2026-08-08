@@ -1,0 +1,22 @@
+# Vision tool prompts for omni-image-tools-mcp (Portuguese)
+
+analyze_image:
+  default: "Analise esta imagem e forneça uma descrição detalhada do seu conteúdo. Inclua informações sobre objetos, cores, composição da cena e quaisquer características notáveis."
+  brief: "Dê uma breve descrição do que há nesta imagem."
+  standard: "Forneça uma descrição abrangente desta imagem, incluindo os principais elementos, cores e contexto."
+  detailed: "Faça uma análise extremamente detalhada desta imagem, descrevendo todos os aspectos notáveis, objetos, cores, texturas e contexto."
+
+identify_objects:
+  default: "Identifique todos os objetos nesta imagem. Para cada objeto, forneça: nome, tamanho aproximado em relação à imagem e localização (superior esquerdo, centro, inferior direito, etc.)."
+  with_count: "Liste todos os objetos distintos nesta imagem com contagens. Formato: [contagem] x [nome do objeto] - [localização]"
+  with_categories: "Identifique os objetos por categoria (pessoa, animal, veículo, mobília, etc.) e forneça detalhes."
+
+read_text:
+  default: "Extraia todo o texto visível desta imagem. Preserve a ordem em que aparece."
+  with_formatting: "Extraia todo o texto desta imagem, preservando o layout, parágrafos e quaisquer pistas de formatação."
+  structured: "Extraia o texto e estruture-o: cabeçalhos, parágrafos, listas, tabelas se presentes."
+
+compare_images:
+  similarities: "Compare estas duas imagens e liste as suas semelhanças."
+  differences: "Compare estas duas imagens e descreva as suas diferenças."
+  both: "Compare estas duas imagens. Primeiro liste as semelhanças e depois descreva as diferenças."

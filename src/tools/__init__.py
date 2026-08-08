@@ -177,6 +177,18 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             },
             "required": ["image_path"],
         },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "original_size": {"type": "array", "items": {"type": "integer"}},
+                "new_size": {"type": "array", "items": {"type": "integer"}},
+                "format": {"type": "string"},
+                "quality": {"type": "integer"},
+                "output_size_bytes": {"type": "integer"},
+            },
+            "required": ["success"],
+        },
     },
     "get_image_info": {
         "name": "get_image_info",
@@ -202,6 +214,21 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 },
             },
             "required": ["image_path"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "format": {"type": ["string", "null"]},
+                "mode": {"type": ["string", "null"]},
+                "size": {
+                    "type": "object",
+                    "properties": {"width": {"type": "integer"}, "height": {"type": "integer"}},
+                    "required": ["width", "height"],
+                },
+                "has_transparency": {"type": "boolean"},
+            },
+            "required": ["success"],
         },
     },
     "crop_image": {
@@ -240,6 +267,26 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             },
             "required": ["image_path", "x", "y", "width", "height"],
         },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "original_size": {"type": "array", "items": {"type": "integer"}},
+                "crop_region": {
+                    "type": "object",
+                    "properties": {
+                        "x": {"type": "integer"},
+                        "y": {"type": "integer"},
+                        "width": {"type": "integer"},
+                        "height": {"type": "integer"},
+                    },
+                    "required": ["x", "y", "width", "height"],
+                },
+                "cropped_size": {"type": "array", "items": {"type": "integer"}},
+                "output_data": {"type": "string"},
+            },
+            "required": ["success"],
+        },
     },
     "convert_image_format": {
         "name": "convert_image_format",
@@ -271,6 +318,18 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             },
             "required": ["image_path", "output_format"],
         },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "original_format": {"type": ["string", "null"]},
+                "original_mode": {"type": ["string", "null"]},
+                "new_format": {"type": "string"},
+                "quality": {"type": ["integer", "null"]},
+                "output_size_bytes": {"type": "integer"},
+            },
+            "required": ["success"],
+        },
     },
     "get_provider_info": {
         "name": "get_provider_info",
@@ -286,6 +345,21 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {},
             "required": [],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "provider": {"type": "string"},
+                "type": {"type": "string"},
+                "image_limit_per_request": {"type": ["integer", "null"]},
+                "supports_multiple_images": {"type": "boolean"},
+                "default_model": {"type": "string"},
+                "description": {"type": "string"},
+                "limits": {"type": "object"},
+                "warnings": {"type": "object"},
+            },
+            "required": ["success"],
         },
     },
     "download_image": {
@@ -307,6 +381,21 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 },
             },
             "required": ["url"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "local_path": {"type": "string"},
+                "format": {"type": "string"},
+                "width": {"type": "integer"},
+                "height": {"type": "integer"},
+                "file_size_bytes": {"type": "integer"},
+                "file_size_kb": {"type": "number"},
+                "original_url": {"type": "string"},
+                "content_warning": {"type": "string"},
+            },
+            "required": ["success"],
         },
     },
     "extract_object": {
@@ -336,6 +425,28 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                 },
             },
             "required": ["image_path", "object_description"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "local_path": {"type": "string"},
+                "coordinates": {
+                    "type": "object",
+                    "properties": {
+                        "x1": {"type": "integer"},
+                        "y1": {"type": "integer"},
+                        "x2": {"type": "integer"},
+                        "y2": {"type": "integer"},
+                    },
+                    "required": ["x1", "y1", "x2", "y2"],
+                },
+                "object_description": {"type": "string"},
+                "extracted_size": {"type": "array", "items": {"type": "integer"}},
+                "original_size": {"type": "array", "items": {"type": "integer"}},
+                "format": {"type": ["string", "null"]},
+            },
+            "required": ["success"],
         },
     },
 }

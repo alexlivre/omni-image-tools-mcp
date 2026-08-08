@@ -7,7 +7,7 @@ SDK-internal request handlers, which are fragile across SDK versions.
 
 import pytest
 
-from src.server import _error_result, _result_text, _validate_image_paths
+from src.server import _error_result, _result_text, _success_result, _validate_image_paths
 from src.tools import TOOL_SCHEMAS
 
 
@@ -105,3 +105,41 @@ class TestPathValidation:
         b.write_bytes(b"x")
         with pytest.raises(FileNotFoundError):
             _validate_image_paths({"image_paths": [str(a), str(tmp_path / "missing.jpg")]})
+
+    def test_validate_image_paths_blocks_sandbox_escape(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "secret.txt"
+        outside.write_bytes(b"x")
+        with pytest.raises(ValueError):
+            _validate_image_paths({"image_path": str(outside)}, allowed_roots=[root])
+
+    def test_validate_image_paths_allows_inside_sandbox(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        inside = root / "img.jpg"
+        inside.write_bytes(b"x")
+        _validate_image_paths({"image_path": str(inside)}, allowed_roots=[root])
+
+
+def test_deterministic_tools_have_output_schema():
+    for name in (
+        "get_image_info",
+        "crop_image",
+        "convert_image_format",
+        "prepare_image",
+        "download_image",
+        "extract_object",
+        "get_provider_info",
+    ):
+        assert TOOL_SCHEMAS[name].get("outputSchema"), f"{name} missing outputSchema"
+
+
+def test_success_result_has_structured_content():
+    r = _success_result({"success": True, "format": "PNG", "width": 100})
+    assert r.structuredContent == {"success": True, "format": "PNG", "width": 100}
+
+
+def test_success_result_strips_binary_fields():
+    r = _success_result({"success": True, "output_data": b"\x01\x02", "format": "PNG"})
+    assert "output_data" not in r.structuredContent

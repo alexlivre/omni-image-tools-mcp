@@ -5,6 +5,30 @@ Todas as mudanças notáveis do **omni-image-tools-mcp** serão documentadas nes
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e o versionamento segue o [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Added
+
+- CI workflow (GitHub Actions: ruff, format, mypy, pytest com gate de 70% de cobertura).
+- Servidor FastMCP (`src/server_fastmcp.py`) com relatório de progresso e `processing_time_ms`.
+- Provider LM Studio.
+- Cache de resultados (`OMNI_VISION_CACHE`).
+- Rate limiting por modelo (`OMNI_RATE_LIMIT_PER_MIN`).
+- Fallback automático de modelo (`OMNI_FALLBACK_MODELS`).
+- Prompts localizados (`OMNI_LANG`).
+- Avaliações (10 QA pairs) em `scripts/run_evaluations.py`.
+
+### Changed
+
+- Cobertura de testes elevada para ~74%.
+- `outputSchema` nas ferramentas determinísticas.
+- `structuredContent` no handler do servidor legacy.
+
+### Fixed
+
+- Retry com backoff exponencial e parse robusto de `Retry-After`.
+- `test_provider_info.py` formatado.
+
 ## [0.5.0] - 2026-08-06
 
 Primeiro release versionado. Servidor MCP com visão computacional (Ollama,

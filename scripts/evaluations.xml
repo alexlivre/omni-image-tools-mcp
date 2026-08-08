@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evaluations>
+  <qa id="1" tool="get_image_info" description="get_image_info reports PNG format for text_sample.png">
+    <param name="image_path" value="tests/fixtures/text_sample.png"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="format" op="eq" value="PNG"/>
+  </qa>
+  <qa id="2" tool="get_image_info" description="get_image_info reports has_transparency for simple.jpg (RGBA PNG fixture)">
+    <param name="image_path" value="tests/fixtures/simple.jpg"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="has_transparency" op="eq" value="true" type="bool"/>
+  </qa>
+  <qa id="3" tool="crop_image" description="crop_image valid region succeeds with matching size">
+    <param name="image_path" value="tests/fixtures/simple.jpg"/>
+    <param name="x" value="100" type="int"/>
+    <param name="y" value="100" type="int"/>
+    <param name="width" value="200" type="int"/>
+    <param name="height" value="150" type="int"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="cropped_size.0" op="eq" value="200" type="int"/>
+    <check field="cropped_size.1" op="eq" value="150" type="int"/>
+  </qa>
+  <qa id="4" tool="crop_image" description="crop_image out-of-bounds region fails">
+    <param name="image_path" value="tests/fixtures/simple.jpg"/>
+    <param name="x" value="0" type="int"/>
+    <param name="y" value="0" type="int"/>
+    <param name="width" value="5000" type="int"/>
+    <param name="height" value="100" type="int"/>
+    <check field="success" op="eq" value="false" type="bool"/>
+  </qa>
+  <qa id="5" tool="convert_image_format" description="convert_image_format PNG to WEBP returns WEBP">
+    <param name="image_path" value="tests/fixtures/text_sample.png"/>
+    <param name="output_format" value="WEBP"/>
+    <param name="quality" value="85" type="int"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="new_format" op="eq" value="WEBP"/>
+  </qa>
+  <qa id="6" tool="prepare_image" description="prepare_image downscales to requested max dimensions">
+    <param name="image_path" value="tests/fixtures/simple.jpg"/>
+    <param name="max_width" value="400" type="int"/>
+    <param name="max_height" value="400" type="int"/>
+    <param name="format" value="JPEG"/>
+    <param name="quality" value="85" type="int"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="new_size.0" op="lte" value="400" type="int"/>
+    <check field="new_size.1" op="lte" value="400" type="int"/>
+  </qa>
+  <qa id="7" tool="get_image_info" description="get_image_info on missing file raises FileNotFoundError">
+    <param name="image_path" value="tests/fixtures/definitely_missing_file.png"/>
+    <check op="raise" value="FileNotFoundError"/>
+  </qa>
+  <qa id="8" tool="get_provider_info" description="get_provider_info with mocked local provider reports type local">
+    <check field="type" op="eq" value="local"/>
+  </qa>
+  <qa id="9" tool="read_text" description="read_text with mocked OCR returns the known string">
+    <param name="image_path" value="tests/fixtures/text_sample.png"/>
+    <check field="success" op="eq" value="true" type="bool"/>
+    <check field="result" op="eq" value="MOCKED_OCR_TEXT_0123"/>
+  </qa>
+  <qa id="10" tool="analyze_image" description="analyze_image with mocked provider returns mocked text and processing_time_ms">
+    <param name="image_path" value="tests/fixtures/simple.jpg"/>
+    <param name="prompt" value="Describe this image"/>
+    <check field="result" op="eq" value="MOCKED_ANALYZE_RESPONSE"/>
+    <check field="processing_time_ms" op="exists"/>
+  </qa>
+</evaluations>
