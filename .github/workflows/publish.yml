@@ -13,8 +13,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment: pypi
-    # Usa Trusted Publishing (sem token exposto). Requer configurar o
-    # publisher em: https://pypi.org/manage/account/publishing/
+    # Uses Trusted Publishing (no token exposed). Requires configuring the
+    # publisher at: https://pypi.org/manage/account/publishing/
     permissions:
       id-token: write
     steps:
@@ -22,6 +22,19 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.10"
+      - name: Validate tag matches project version
+        run: |
+          if [ -n "$GITHUB_REF_NAME" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+            project_version="$(uv run python -c "import re; m=re.search(r'^version\s*=\s*[\"\x27]([^\"\x27]+)', open('pyproject.toml').read(), re.M); print(m.group(1))")"
+            if [ "$tag_version" != "$project_version" ]; then
+              echo "::error::Tag '$GITHUB_REF_NAME' does not match project version '$project_version' in pyproject.toml. Bump pyproject.toml to match the tag (or vice versa) before publishing."
+              exit 1
+            fi
+            echo "Tag '$GITHUB_REF_NAME' matches project version '$project_version'."
+          else
+            echo "Manual workflow_dispatch run — publishing current pyproject.toml version."
+          fi
       - name: Build sdist + wheel
         run: uv build
       - name: Publish to PyPI
