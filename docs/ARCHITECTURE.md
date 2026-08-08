@@ -1,18 +1,18 @@
 # Architecture
 
-Estrutura do código e decisões arquiteturais.
+Code structure and architectural decisions.
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 omni-image-tools-mcp/
 ├── src/
 │   ├── __init__.py
 │   ├── server.py           # MCP server (entry point)
-│   ├── config.py           # Lê env vars (API_KEY, MODEL, PROVIDER, etc)
-│   ├── image_handler.py    # Processamento de imagem
+│   ├── config.py           # Reads env vars (API_KEY, MODEL, PROVIDER, etc)
+│   ├── image_handler.py    # Image processing
 │   └── providers/
-│       ├── __init__.py    # Factory: retorna provider baseado na config
+│       ├── __init__.py    # Factory: returns provider based on config
 │       ├── openrouter.py   # OpenRouter client
 │       ├── openai.py       # OpenAI client
 │       ├── ollama.py       # Ollama client
@@ -29,27 +29,27 @@ omni-image-tools-mcp/
 └── README.md
 ```
 
-## Componentes
+## Components
 
 ### `server.py`
-- MCP server usando `mcp.server.stdio`
-- Registra as tools: `analyze_image`, `identify_objects`, `read_text`
-- Orquestra: image_handler → providers
+- MCP server using `mcp.server.stdio`
+- Registers the tools: `analyze_image`, `identify_objects`, `read_text`
+- Orchestrates: image_handler → providers
 
 ### `config.py`
-- Lê configuração de **env vars** (não de arquivo JSON)
-- Fornece defaults
-- Valida variáveis obrigatórias
+- Reads configuration from **env vars** (not from a JSON file)
+- Provides defaults
+- Validates required variables
 
 ### `image_handler.py`
-- Processa imagem de várias fontes (path local, URL, base64)
-- Valida tipo e tamanho
-- Converte para base64
+- Processes images from multiple sources (local path, URL, base64)
+- Validates type and size
+- Converts to base64
 
 ### `providers/`
-- **Factory pattern**: `providers/__init__.py` retorna o provider correto baseado em `PROVIDER`
-- Cada provedor em arquivo separado
-- Interface comum: `analyze_image(image_data, prompt, model)`
+- **Factory pattern**: `providers/__init__.py` returns the correct provider based on `PROVIDER`
+- Each provider in its own file
+- Common interface: `analyze_image(image_data, prompt, model)`
 
 ## Providers
 
@@ -60,11 +60,11 @@ omni-image-tools-mcp/
 | Ollama | None (local) | `http://localhost:11434/api/generate` |
 | LM Studio | None (local) | `http://localhost:1234/api/generate` |
 
-## Configuração via Env Vars
+## Configuration via Env Vars
 
-A configuração vem da **host app** (a aplicação que está usando o MCP). O nome do arquivo varia conforme a aplicação:
+Configuration comes from the **host app** (the application using the MCP). The config file name varies by application:
 
-| Aplicação | Arquivo de Config |
+| Application | Config File |
 |-----------|-------------------|
 | OpenCode | `opencode.json` |
 | Claude Desktop | `claude_desktop_config.json` |
@@ -72,9 +72,9 @@ A configuração vem da **host app** (a aplicação que está usando o MCP). O n
 | Cursor IDE | `settings.json` |
 | Windsurf | `.windsurf/config.json` |
 
-**O MCP não sabe qual app está usando.** Ele apenas recebe env vars. A configuração é feita pela host app.
+**The MCP does not know which app is using it.** It only receives env vars. Configuration is done by the host app.
 
-### Exemplo Genérico
+### Generic Example
 
 ```json
 "omni-image-tools": {
@@ -87,62 +87,62 @@ A configuração vem da **host app** (a aplicação que está usando o MCP). O n
 }
 ```
 
-### Estrutura Comum
+### Common Structure
 
-A maioria das host apps usa estrutura similar:
-- `command`: como executar o MCP
-- `args`: argumentos do command
-- `env`: variáveis de ambiente passadas ao MCP
-- `enabled`: se está ativo
+Most host apps use a similar structure:
+- `command`: how to run the MCP
+- `args`: command arguments
+- `env`: environment variables passed to the MCP
+- `enabled`: whether it's enabled
 
-### Variáveis de Ambiente
+### Environment Variables
 
-| Variável | Obrigatório | Default | Descrição |
+| Variable | Required | Default | Description |
 |----------|-------------|---------|-----------|
-| `OMNI_VISION_API_KEY` | Sim* | - | API key do provedor (*exceto local) |
-| `OMNI_VISION_PROVIDER` | Sim | - | `openrouter`, `openai`, `ollama`, `lmstudio` |
-| `OMNI_VISION_DEFAULT_MODEL` | Não | varies | Modelo default |
-| `OMNI_VISION_TIMEOUT` | Não | `120` | Timeout em segundos |
-| `OLLAMA_BASE_URL` | Não | `http://localhost:11434` | URL do Ollama (local) |
-| `LMSTUDIO_BASE_URL` | Não | `http://localhost:1234` | URL do LM Studio (local) |
+| `OMNI_VISION_API_KEY` | Yes* | - | Provider API key (*except local) |
+| `OMNI_VISION_PROVIDER` | Yes | - | `openrouter`, `openai`, `ollama`, `lmstudio` |
+| `OMNI_VISION_DEFAULT_MODEL` | No | varies | Default model |
+| `OMNI_VISION_TIMEOUT` | No | `120` | Timeout in seconds |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama URL (local) |
+| `LMSTUDIO_BASE_URL` | No | `http://localhost:1234` | LM Studio URL (local) |
 
-### Escolha do Provedor e Modelo
+### Provider and Model Selection
 
-**Nível 1 - Global (env vars):**
-Configurado uma vez na host app. Define o provider default e modelo default.
+**Level 1 - Global (env vars):**
+Configured once in the host app. Defines the default provider and default model.
 
-**Nível 2 - Per-Call Override:**
-Usuário pode sobrescrever o modelo por chamada:
+**Level 2 - Per-Call Override:**
+The user can override the model per call:
 ```
 analyze_image(image_path="...", model="anthropic/claude-opus-4.7")
 ```
 
-**Validação Estrita:**
-Se o modelo não é compatível com o provider → erro claro:
+**Strict Validation:**
+If the model is not compatible with the provider → clear error:
 ```
-"Modelo claude-opus-4.7 requer provider=openrouter, mas provider=ollama está configurado"
+"Model claude-opus-4.7 requires provider=openrouter, but provider=ollama is configured"
 ```
 
-## Fluxo de Dados
+## Data Flow
 
 ```
 Tool Call → server.py
-  → config.py (lê env vars)
+  → config.py (reads env vars)
   → providers/__init__.py (factory)
-  → providers/openrouter.py (exemplo)
+  → providers/openrouter.py (example)
       → image_handler.process_image(image_path) → base64
       → HTTP POST → OpenRouter API
  → TextContent response
 ```
 
-## Decisões
+## Decisions
 
-1. **Providers separados**: Cada provedor em arquivo próprio, isolado para fácil manutenção e teste
+1. **Separate providers**: Each provider in its own file, isolated for easy maintenance and testing
 
-2. **Factory pattern**: `server.py` não sabe qual provedor está usando — apenas chama `get_provider()` e usa interface comum
+2. **Factory pattern**: `server.py` doesn't know which provider it's using — it just calls `get_provider()` and uses the common interface
 
-3. **Config via env vars**: Sem arquivo de config no MCP — tudo vem da host app via env vars
+3. **Config via env vars**: No config file in the MCP — everything comes from the host app via env vars
 
-4. **Image handler reutilizado**: Mesmo do ollama-vision-mcp, funciona bem para todos provedores
+4. **Reused image handler**: The same one from ollama-vision-mcp, works well for all providers
 
-5. **STDIO transport**: Usa stdio standard do MCP para comunicação
+5. **STDIO transport**: Uses the MCP standard stdio for communication

@@ -1209,7 +1209,7 @@ git commit -m "test(eval): add 10 evaluation QA pairs with runner"
 **Files:**
 - Modify: `tasks/TODO.md`
 
-- [ ] **Step 1:** Mark `[x]` every item that is already implemented (Fases 2-10 and the CLI/registry/provider items now done), leaving `[ ]` only for the open decisions (cache, rate limiting, fallback, i18n) — unless implemented in Tasks 13-16, in which case mark those `[x]` too — plus any new backlog lines referencing CI, FastMCP, and LM Studio.
+- [ ] **Step 1:** Mark `[x]` every item that is already implemented (Phases 2-10 and the CLI/registry/provider items now done), leaving `[ ]` only for the open decisions (cache, rate limiting, fallback, i18n) — unless implemented in Tasks 13-16, in which case mark those `[x]` too — plus any new backlog lines referencing CI, FastMCP, and LM Studio.
 
 - [ ] **Step 2: Commit**
 

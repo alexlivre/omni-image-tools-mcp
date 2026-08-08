@@ -1,69 +1,69 @@
-# ADR-001: Arquitetura Extensível para Omni-Vision-MCP
+# ADR-001: Extensible Architecture for Omni-Vision-MCP
 
-**Data**: 2026-05-31
-**Status**: Aprovado
-**Decisores**: Alex
+**Date**: 2026-05-31
+**Status**: Approved
+**Deciders**: Alex
 
 ---
 
-## Contexto
+## Context
 
-Estamos criando o `omni-image-tools-mcp`, um MCP de visão que suporta múltiplos provedores (OpenRouter, OpenAI, Ollama, LM Studio) e múltiplas ferramentas (visão + processamento).
+We are building `omni-image-tools-mcp`, a vision MCP that supports multiple providers (OpenRouter, OpenAI, Ollama, LM Studio) and multiple tools (vision + processing).
 
-Analisamos o repo de referência (`ollama-vision-mcp`) e concluímos que:
-- Código é simples e funcional (~500 linhas)
-- Estrutura atual não suporta extensão fácil
-- Adicionar novo provider ou tool = refatoração significativa
+We analyzed the reference repo (`ollama-vision-mcp`) and concluded that:
+- Code is simple and functional (~500 lines)
+- Current structure does not support easy extension
+- Adding a new provider or tool = significant refactoring
 
-### Problema
+### Problem
 
-Se investirmos apenas na refatoração mínima, acumularemos tech debt:
-- Novas tools = editar `server.py`
-- Novos providers = refatorar cliente
-- Prompts hardcoded = procurar no código para modificar
+If we invest only in minimal refactoring, we will accumulate tech debt:
+- New tools = edit `server.py`
+- New providers = refactor client
+- Hardcoded prompts = search the code to modify
 
 ### Trade-offs considered
 
-| Opção | Trabalho Inicial | Facilidade Futura | Risco |
+| Option | Initial Work | Future Ease | Risk |
 |-------|-----------------|-------------------|-------|
-| Fork + refatoração mínima | Baixo | Média | Tech debt |
-| Fork + arquitetura extensível | Médio (~2x) | Alta | Over-engineering? |
-| Começar do zero | Alto | Alta | Perde boilerplate |
+| Fork + minimal refactoring | Low | Medium | Tech debt |
+| Fork + extensible architecture | Medium (~2x) | High | Over-engineering? |
+| Start from scratch | High | High | Loses boilerplate |
 
 ---
 
-## Decisão
+## Decision
 
-**Fazer fork + arquitetura extensível.**
+**Do a fork + extensible architecture.**
 
 ### Rationale
 
-1. Investimento único de ~2x tempo inicial
-2. ROI positivo já na segunda ou terceira feature
-3. Arquitetura suporta multi-provider + multi-tool desde o início
-4. Prompts separados = designers/PMs podem editar sem mexer código
-5. Não é over-engineering — é arquitetura apropriada para:
-   - 4 provedores diferentes
-   - 8+ tools (visão + processamento)
-   - Manutenção a longo prazo
+1. One-time investment of ~2x initial time
+2. Positive ROI already by the second or third feature
+3. Architecture supports multi-provider + multi-tool from the start
+4. Separate prompts = designers/PMs can edit without touching code
+5. It's not over-engineering — it's the appropriate architecture for:
+   - 4 different providers
+   - 8+ tools (vision + processing)
+   - Long-term maintenance
 
 ---
 
-## Arquitetura Proposta
+## Proposed Architecture
 
 ```
 omni-image-tools-mcp/
 ├── src/
 │   ├── server.py              # MCP setup + tool registry
 │   ├── config.py              # Env vars + config file
-│   ├── image_handler.py       # Mantém do original
+│   ├── image_handler.py       # Keep from original
 │   │
 │   ├── providers/              # FACTORY PATTERN
 │   │   ├── __init__.py        # ProviderFactory.get()
 │   │   ├── base.py            # VisionProvider (ABC)
 │   │   ├── openrouter.py
 │   │   ├── openai.py
-│   │   ├── ollama.py          # Migrate do original
+│   │   ├── ollama.py          # Migrate from original
 │   │   └── lmstudio.py
 │   │
 │   ├── tools/                 # REGISTRY PATTERN
@@ -85,7 +85,7 @@ omni-image-tools-mcp/
 
 ---
 
-## Componentes
+## Components
 
 ### 1. Provider Factory
 
@@ -113,7 +113,7 @@ class VisionProvider(ABC):
         pass
 ```
 
-**Benefício**: Adicionar novo provider = criar 1 arquivo + adicionar ao dict.
+**Benefit**: Adding a new provider = create 1 file + add to the dict.
 
 ### 2. Tool Registry
 
@@ -144,9 +144,9 @@ class AnalyzeTool:
         # Logic here
 ```
 
-**Benefício**: Adicionar nova tool = criar 1 arquivo + chamar `.register()`.
+**Benefit**: Adding a new tool = create 1 file + call `.register()`.
 
-### 3. Prompts Separados
+### 3. Separate Prompts
 
 ```yaml
 # prompts/vision.yaml
@@ -161,22 +161,22 @@ describe:
   brief: "Give a brief summary..."
 ```
 
-**Benefício**: Editar prompts = editar YAML, não código.
+**Benefit**: Editing prompts = edit YAML, not code.
 
 ---
 
-## Como Adicionar Features
+## How to Add Features
 
-### Nova Tool de Visão
+### New Vision Tool
 
-1. Criar `src/tools/vision/minha_tool.py`
-2. Definir classe com `name`, `description`, `input_schema`, `execute()`
-3. Importar e registrar no `tools/__init__.py`
+1. Create `src/tools/vision/my_tool.py`
+2. Define a class with `name`, `description`, `input_schema`, `execute()`
+3. Import and register it in `tools/__init__.py`
 
 ```python
-# src/tools/vision/minha_tool.py
-class MinhaTool:
-    name = "minha_tool"
+# src/tools/vision/my_tool.py
+class MyTool:
+    name = "my_tool"
     description = "..."
     input_schema = {...}
 
@@ -186,20 +186,20 @@ class MinhaTool:
 
 ```python
 # src/tools/__init__.py
-from .vision.minha_tool import MinhaTool
-registry.register(MinhaTool())
+from .vision.my_tool import MyTool
+registry.register(MyTool())
 ```
 
-### Novo Provider
+### New Provider
 
-1. Criar `src/providers/meu_provider.py`
-2. Herdar de `VisionProvider`
-3. Implementar `analyze()`
-4. Adicionar ao dict em `providers/__init__.py`
+1. Create `src/providers/my_provider.py`
+2. Inherit from `VisionProvider`
+3. Implement `analyze()`
+4. Add to the dict in `providers/__init__.py`
 
 ```python
-# src/providers/meu_provider.py
-class MeuProvider(VisionProvider):
+# src/providers/my_provider.py
+class MyProvider(VisionProvider):
     def __init__(self, config):
         self.config = config
 
@@ -209,33 +209,33 @@ class MeuProvider(VisionProvider):
 
 ```python
 # src/providers/__init__.py
-providers["meu_provider"] = MeuProvider
+providers["my_provider"] = MyProvider
 ```
 
-### Modificar Prompt
+### Modify a Prompt
 
-Editar `src/prompts/vision.yaml` — não precisa mexer código.
+Edit `src/prompts/vision.yaml` — no code changes needed.
 
 ---
 
-## Detecção Dinâmica de Modelos Ollama
+## Ollama Dynamic Model Detection
 
-Implementar no provider Ollama:
+Implement in the Ollama provider:
 
 ```python
 class OllamaProvider(VisionProvider):
     async def list_models(self) -> List[str]:
-        """Lista modelos instalados no Ollama"""
+        """List models installed on Ollama"""
         response = await self.client.get("/api/tags")
         return [m["name"] for m in response.get("models", [])]
 
     async def is_vision_model(self, model: str) -> bool:
-        """Testa se modelo suporta imagem"""
-        # Tentar chamada simples com image
+        """Test if model supports images"""
+        # Try simple call with image
         pass
 
     async def ensure_model(self, model: str) -> bool:
-        """Garante que modelo está disponível (auto-pull)"""
+        """Ensure model is available (auto-pull)"""
         available = await self.list_models()
         if model not in available:
             await self.pull_model(model)
@@ -251,20 +251,20 @@ Config:
 }
 ```
 
-**Allowlist:** Em vez de auto-detecção, usamos lista curated de modelos seguros para evitar downloads acidentais de modelos grandes.
+**Allowlist:** Instead of auto-detection, we use a curated list of safe models to avoid accidental downloads of large models.
 
 ---
 
-## Migração do Repo Original
+## Migration from the Original Repo
 
-### Passo 1: Fork
+### Step 1: Fork
 ```bash
 git clone https://github.com/xkiranj/ollama-vision-mcp omni-image-tools-mcp
 cd omni-image-tools-mcp
 git remote rename origin upstream
 ```
 
-### Passo 2: Criar estrutura
+### Step 2: Create structure
 ```bash
 mkdir -p src/providers
 mkdir -p src/tools/vision
@@ -273,36 +273,36 @@ mkdir -p src/prompts
 mkdir -p src/utils
 ```
 
-### Passo 3: Migrar código
+### Step 3: Migrate code
 - `src/ollama_client.py` → `src/providers/ollama.py`
-- `src/config.py` → refatorar para multi-provider
+- `src/config.py` → refactor for multi-provider
 - Prompts → `src/prompts/vision.yaml`
 
-### Passo 4: Implementar factory + registry
+### Step 4: Implement factory + registry
 
-### Passo 5: Criar providers placeholder (openrouter, openai, lmstudio)
+### Step 5: Create placeholder providers (openrouter, openai, lmstudio)
 
-### Passo 6: Migrar/adicionar tools
+### Step 6: Migrate/add tools
 
 ---
 
-## Testing Durante Desenvolvimento
+## Testing During Development
 
-### Princípio
+### Principle
 
-Testar cada tool **isoladamente** durante dev, **antes** de integrar com host app. Garantir que tudo funcione sem precisar configurar o MCP na aplicação.
+Test each tool **in isolation** during dev, **before** integrating with the host app. Ensure everything works without having to configure the MCP in the application.
 
-### Estrutura
+### Structure
 
 ```
 omni-image-tools-mcp/
 ├── scripts/
-│   └── cli.py               # CLI unificada para testes
+│   └── cli.py               # Unified CLI for testing
 ├── tests/
 │   └── fixtures/
-│       ├── simple.jpg       # Objeto único
-│       ├── complex.jpg      # Múltiplos objetos
-│       ├── text_sample.png  # Screenshot/documento
+│       ├── simple.jpg       # Single object
+│       ├── complex.jpg      # Multiple objects
+│       ├── text_sample.png  # Screenshot/document
 │       ├── multilanguage.jpg
 │       └── big_photo.heic   # Stress test (iPhone)
 └── src/
@@ -311,48 +311,48 @@ omni-image-tools-mcp/
 ### CLI Commands
 
 ```bash
-# Tools de visão
-python scripts/cli.py analyze --image foto.jpg --provider ollama --model qwen3-vl:4b
-python scripts/cli.py describe --image foto.jpg --provider openrouter
-python scripts/cli.py identify --image foto.jpg
+# Vision tools
+python scripts/cli.py analyze --image photo.jpg --provider ollama --model qwen3-vl:4b
+python scripts/cli.py describe --image photo.jpg --provider openrouter
+python scripts/cli.py identify --image photo.jpg
 python scripts/cli.py read-text --image screenshot.png
 python scripts/cli.py compare --image1 a.jpg --image2 b.jpg
 
-# Tools de processamento
-python scripts/cli.py info --image foto.jpg
-python scripts/cli.py prepare --image foto.jpg --max-size 512
-python scripts/cli.py crop --image foto.jpg --x 100 --y 100 --w 200 --h 200
-python scripts/cli.py convert --image foto.jpg --format WEBP
+# Processing tools
+python scripts/cli.py info --image photo.jpg
+python scripts/cli.py prepare --image photo.jpg --max-size 512
+python scripts/cli.py crop --image photo.jpg --x 100 --y 100 --w 200 --h 200
+python scripts/cli.py convert --image photo.jpg --format WEBP
 
-# Benchmark todos providers
-python scripts/cli.py benchmark --image foto.jpg --providers ollama,openrouter,openai
+# Benchmark all providers
+python scripts/cli.py benchmark --image photo.jpg --providers ollama,openrouter,openai
 
-# Shell interativo
+# Interactive shell
 python scripts/cli.py shell --provider ollama
 ```
 
-### Imagens de Teste (fixtures)
+### Test Images (fixtures)
 
-| Imagem | Uso | Descrição |
+| Image | Use | Description |
 |--------|-----|-----------|
-| `simple.jpg` | Teste básico | Objeto único em fundo simples |
-| `complex.jpg` | Múltiplos objetos | Cena com vários elementos |
-| `text_sample.png` | OCR | Screenshot ou documento com texto |
-| `multilanguage.jpg` | OCR multilíngue | Texto em PT/EN/ES |
-| `small.jpg` | Thumbnails | Imagem pequena para stress test |
-| `big_photo.heic` | iPhone | Foto em formato HEIC |
+| `simple.jpg` | Basic test | Single object on a simple background |
+| `complex.jpg` | Multiple objects | Scene with several elements |
+| `text_sample.png` | OCR | Screenshot or document with text |
+| `multilanguage.jpg` | Multilingual OCR | Text in PT/EN/ES |
+| `small.jpg` | Thumbnails | Small image for stress testing |
+| `big_photo.heic` | iPhone | Photo in HEIC format |
 
-### Benefícios do CLI Testing
+### Benefits of CLI Testing
 
-| Aspecto | Benefício |
+| Aspect | Benefit |
 |---------|-----------|
-| **Velocidade** | Testa tool sem subir MCP server |
-| **Debug** | Print direto no output, fácil ver erros |
-| **Provider** | Testa cada provider isolado |
-| **Documentação** | CLI = documentação de uso |
-| **CI/CD** | Scripts podem rodar em automated tests |
+| **Speed** | Test tool without starting the MCP server |
+| **Debug** | Direct print to output, easy to see errors |
+| **Provider** | Test each provider in isolation |
+| **Documentation** | CLI = usage documentation |
+| **CI/CD** | Scripts can run in automated tests |
 
-### Implementação CLI
+### CLI Implementation
 
 ```python
 # scripts/cli.py
@@ -388,11 +388,11 @@ async def cmd_analyze(args):
 
 ## Tool Efficiency Standards
 
-O MCP deve ser muito eficiente na comunicação tool/schema. AI deve entender rapidamente:
-- O que cada tool faz
-- Quando usar cada tool
-- Como passar parâmetros corretamente
-- Como interpretar responses
+The MCP must be very efficient in tool/schema communication. The AI should quickly understand:
+- What each tool does
+- When to use each tool
+- How to pass parameters correctly
+- How to interpret responses
 
 ### 1. Tool Description Template
 
@@ -408,7 +408,7 @@ Examples:
   [example2]
 ```
 
-**Exemplo:**
+**Example:**
 ```python
 description="""analyze_image: Analyze image and get description.
 
@@ -604,24 +604,24 @@ Output includes:
 
 ## Status
 
-- [x] Decisão tomada
-- [x] Testing strategy definida
-- [x] Tool efficiency standards definidos
-- [x] Error handling excellence definido
-- [ ] Fork realizado
-- [ ] Estrutura criada
-- [ ] CLI implementada
-- [ ] Provider factory implementado
-- [ ] Tool registry implementado
-- [ ] Providers migrados/criados
-- [ ] Tools migradas/adicionadas
-- [ ] Prompts separados
-- [ ] Fixtures de teste criados
+- [x] Decision made
+- [x] Testing strategy defined
+- [x] Tool efficiency standards defined
+- [x] Error handling excellence defined
+- [ ] Fork done
+- [ ] Structure created
+- [ ] CLI implemented
+- [ ] Provider factory implemented
+- [ ] Tool registry implemented
+- [ ] Providers migrated/created
+- [ ] Tools migrated/added
+- [ ] Prompts separated
+- [ ] Test fixtures created
 
 ---
 
 ## Links
 
-- Repo original: https://github.com/xkiranj/ollama-vision-mcp
+- Original repo: https://github.com/xkiranj/ollama-vision-mcp
 - Spec: [SPEC.md](../SPEC.md)
 - Tasks: [tasks/TODO.md](../tasks/TODO.md)

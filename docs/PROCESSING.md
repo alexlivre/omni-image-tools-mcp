@@ -1,48 +1,48 @@
 # Image Processing Tools
 
-Ferramentas de processamento de imagem para complementar as ferramentas de visão.
+Image processing tools to complement the vision tools.
 
-## Bibliotecas Python
+## Python Libraries
 
-| Biblioteca | Uso | Status |
+| Library | Use | Status |
 |------------|-----|--------|
-| **Pillow (PIL)** | Resize, crop, convert, compress, thumbnail | ✅ Padrão, já usado no original |
-| **ExifRead** | Extrair EXIF de TIFF/JPEG | ✅ Leve, puro Python, bem mantido |
-| **pillow-heif** | Suporte HEIC (fotos iPhone) | ✅ Ativo, suporta HEIF/HEIC |
+| **Pillow (PIL)** | Resize, crop, convert, compress, thumbnail | ✅ Default, already used in the original |
+| **ExifRead** | Extract EXIF from TIFF/JPEG | ✅ Lightweight, pure Python, well maintained |
+| **pillow-heif** | HEIC support (iPhone photos) | ✅ Active, supports HEIF/HEIC |
 
 ### Dependencies
 
 ```txt
 Pillow>=10.0.0
 ExifRead>=3.0.0
-pillow-heif>=0.12.0  # opcional
+pillow-heif>=0.12.0  # optional
 ```
 
 ---
 
-## Ferramentas de Processamento (v2)
+## Processing Tools (v2)
 
 ### 1. `prepare_image`
 
-Prepara imagem para envio a APIs de visão: resize, comprime, converte formato.
+Prepares an image for sending to vision APIs: resizes, compresses, converts format.
 
-**Parâmetros:**
+**Parameters:**
 ```python
 prepare_image(
     image_path: str,
-    max_width: int = 1024,       # largura máxima
-    max_height: int = 1024,      # altura máxima
+    max_width: int = 1024,       # max width
+    max_height: int = 1024,      # max height
     format: str = "JPEG",         # "JPEG", "PNG", "WEBP"
-    quality: int = 85,           #1-100 para JPEG
-    mode: str = "fit"            # "fit" (mantém aspect), "stretch" (força dimensões)
-) -> str  # path da imagem processada
+    quality: int = 85,           # 1-100 for JPEG
+    mode: str = "fit"            # "fit" (keeps aspect), "stretch" (forces dimensions)
+) -> str  # path of the processed image
 ```
 
-**Uso:** Reduzir custo de APIs que cobram por pixel.
+**Use:** Reduce the cost of APIs that charge per pixel.
 
-**Exemplo:**
+**Example:**
 ```python
-# Preparar imagem para OpenRouter (max1024x1024, JPEG 85%)
+# Prepare image for OpenRouter (max 1024x1024, JPEG 85%)
 prepare_image("photo.jpg", max_width=1024, max_height=1024, format="JPEG", quality=85)
 ```
 
@@ -50,17 +50,17 @@ prepare_image("photo.jpg", max_width=1024, max_height=1024, format="JPEG", quali
 
 ### 2. `get_image_info`
 
-Extrai informações e metadata de uma imagem.
+Extracts information and metadata from an image.
 
-**Parâmetros:**
+**Parameters:**
 ```python
 get_image_info(
     image_path: str,
-    include_exif: bool = True    # incluir dados EXIF
-) -> dict # informações da imagem
+    include_exif: bool = True    # include EXIF data
+) -> dict # image information
 ```
 
-**Retorno:**
+**Return:**
 ```json
 {
  "path": "photo.jpg",
@@ -82,41 +82,41 @@ get_image_info(
 
 ### 3. `crop_image`
 
-Corta uma região específica da imagem.
+Crops a specific region of the image.
 
-**Parâmetros:**
+**Parameters:**
 ```python
 crop_image(
     image_path: str,
-    x: int,                      # coordenada X do canto superior esquerdo
-    y: int,                      # coordenada Y do canto superior esquerdo
-    width: int,                  # largura da região
-    height: int,                 # altura da região
-    output_path: str = None     # se None, sobrescreve original
-) -> str  # path da imagem recortada
+    x: int,                      # X coordinate of the top-left corner
+    y: int,                      # Y coordinate of the top-left corner
+    width: int,                  # region width
+    height: int,                 # region height
+    output_path: str = None     # if None, overwrites the original
+) -> str  # path of the cropped image
 ```
 
-**Uso:** Focar análise em área específica.
+**Use:** Focus analysis on a specific area.
 
 ---
 
 ### 4. `convert_image_format`
 
-Converte imagem entre formatos.
+Converts an image between formats.
 
-**Parâmetros:**
+**Parameters:**
 ```python
 convert_image_format(
     image_path: str,
     output_format: str,          # "JPEG", "PNG", "WEBP", "HEIC"
-    output_path: str = None,    # se None, usa mesmo nome com nova extensão
-    quality: int = 85           # para JPEG/WEBP
-) -> str  # path da imagem convertida
+    output_path: str = None,    # if None, uses the same name with the new extension
+    quality: int = 85           # for JPEG/WEBP
+) -> str  # path of the converted image
 ```
 
 ---
 
-## Ferramentas Futuras (v3+)
+## Future Tools (v3+)
 
 ### `create_thumbnail`
 ```python
@@ -136,60 +136,60 @@ rotate_image(
 ) -> str
 ```
 
-### `extract_faces` (usando face_recognition ou similar)
+### `extract_faces` (using face_recognition or similar)
 ```python
 extract_faces(
     image_path: str,
     output_dir: str = None
-) -> list # lista de paths das faces extraídas
+) -> list # list of paths of the extracted faces
 ```
 
 ---
 
-## Decisões
+## Decisions
 
-- [x] Adicionar ferramentas de processamento (v2)
-- [x] Usar Pillow como biblioteca principal
-- [x] Usar ExifRead para metadata EXIF
-- [x] Adicionar suporte pillow-heif para fotos iPhone
-- [ ] Criar thumbnail com Pillow ou lib separada?
-- [ ] Detecção de faces com face_recognition? (heavy dependency)
+- [x] Add processing tools (v2)
+- [x] Use Pillow as the main library
+- [x] Use ExifRead for EXIF metadata
+- [x] Add pillow-heif support for iPhone photos
+- [ ] Create thumbnail with Pillow or a separate library?
+- [ ] Face detection with face_recognition? (heavy dependency)
 
 ---
 
-## Pre-processamento Automático de Imagens
+## Automatic Image Pre-processing
 
-**Regra obrigatória** aplicada a **todas** as imagens recebidas por vision tools (`analyze_image`, `read_text`, `identify_objects`, `compare_images`, `extract_object`), **antes** de qualquer análise ou envio ao modelo. Não é opt-out.
+**Mandatory rule** applied to **all** images received by vision tools (`analyze_image`, `read_text`, `identify_objects`, `compare_images`, `extract_object`), **before** any analysis or sending to the model. Not opt-out.
 
-### Pipeline fixo
+### Fixed pipeline
 
-1. **Redimensionamento** (obrigatório)
-   - Mantém proporção original.
-   - Lado maior máximo = **1536 px**.
-   - Se a imagem já tiver lado maior < 768 px, **mantém o tamanho original** (sem upscaling).
-   - Filtro **Lanczos** (alta qualidade).
+1. **Resizing** (mandatory)
+   - Keeps the original aspect ratio.
+   - Maximum longest side = **1536 px**.
+   - If the image's longest side is already < 768 px, **keeps the original size** (no upscaling).
+   - **Lanczos** filter (high quality).
 
-2. **Conversão e compactação** (obrigatório)
-   - Conversão para **RGB** (canal alpha removido se existir).
-   - Salva como **JPEG qualidade 90**, `optimize=True`, `progressive=True`.
-   - Meta: arquivo final entre **300 KB e 1 MB** (preferencial; tolerante fora da faixa para imagens sintéticas ou muito simples).
+2. **Conversion and compression** (mandatory)
+   - Converts to **RGB** (alpha channel removed if present).
+   - Saves as **JPEG quality 90**, `optimize=True`, `progressive=True`.
+   - Goal: final file between **300 KB and 1 MB** (preferred; tolerant outside the range for synthetic or very simple images).
 
-### Onde é aplicado
+### Where it is applied
 
-| Tool | Comportamento |
+| Tool | Behavior |
 |------|---------------|
-| `analyze_image` | Envia ao model a versão pré-processada |
-| `read_text` | Envia ao model a versão pré-processada |
-| `identify_objects` | Envia ao model a versão pré-processada |
-| `compare_images` | Pré-processa **cada** imagem antes de enviar |
-| `extract_object` | Pré-processa a imagem enviada ao model; o **crop final é feito da imagem original** (preserva precisão do recorte) |
+| `analyze_image` | Sends the pre-processed version to the model |
+| `read_text` | Sends the pre-processed version to the model |
+| `identify_objects` | Sends the pre-processed version to the model |
+| `compare_images` | Pre-processes **each** image before sending |
+| `extract_object` | Pre-processes the image sent to the model; the **final crop is done from the original image** (preserves crop accuracy) |
 
 ### Cache
 
-- Resultados são cacheados em `<tempdir>/omni-image-tools/preprocessed/<sha256>.jpg`, indexados pelo SHA-256 do arquivo original.
-- Repetições com a mesma imagem não reprocessam.
+- Results are cached in `<tempdir>/omni-image-tools/preprocessed/<sha256>.jpg`, indexed by the SHA-256 of the original file.
+- Repeats with the same image are not reprocessed.
 
-### Constantes (não configuráveis)
+### Constants (not configurable)
 
 ```python
 MAX_LONGEST_SIDE = 1536
@@ -197,7 +197,7 @@ KEEP_BELOW = 768
 JPEG_QUALITY = 90
 ```
 
-### Implementação
+### Implementation
 
-- Módulo: `src/utils/image_preprocessor.py`
-- Função pública: `preprocess_to_bytes(path: str | Path) -> bytes`
+- Module: `src/utils/image_preprocessor.py`
+- Public function: `preprocess_to_bytes(path: str | Path) -> bytes`

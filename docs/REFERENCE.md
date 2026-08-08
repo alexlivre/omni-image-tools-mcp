@@ -1,52 +1,52 @@
-# Reference - Repo Original
+# Reference - Original Repo
 
-Análise do repo clonado: `ollama-vision-mcp`
+Analysis of the cloned repo: `ollama-vision-mcp`
 
-## Origem
+## Origin
 
 - **Repo**: https://github.com/xkiranj/ollama-vision-mcp
 - **Clone**: `C:\code\mcp-servers\maker\ollama-vision-mcp-reference`
-- **Uso**: Somente estudo, não modificar
+- **Use**: Study only, do not modify
 
-## Arquivos Principais
+## Main Files
 
-| Arquivo | Descrição |
+| File | Description |
 |---------|-----------|
-| `src/server.py` | MCP server com 4 tools |
-| `src/ollama_client.py` | Cliente Ollama API |
-| `src/image_handler.py` | Processamento de imagem |
-| `src/config.py` | Configuração |
+| `src/server.py` | MCP server with 4 tools |
+| `src/ollama_client.py` | Ollama API client |
+| `src/image_handler.py` | Image processing |
+| `src/config.py` | Configuration |
 
-## O que aprendemos
+## What we learned
 
 ### 1. MCP SDK
-- Usa `mcp.server.stdio` para comunicação stdio
-- `types.Tool` para definir tools
-- `Server` class base
+- Uses `mcp.server.stdio` for stdio communication
+- `types.Tool` to define tools
+- `Server` base class
 
-### 2. API Ollama
+### 2. Ollama API
 - Endpoint: `POST /api/generate`
 - Body: `{"model": "...", "prompt": "...", "images": [base64], "stream": false}`
 - Response: `{"response": "..."}`
 
 ### 3. Image Handling
-- Suporta: path local, URL, base64
-- Valida tipo (jpg, png, etc)
-- Limite 20MB
-- Converte RGBA → RGB
+- Supports: local path, URL, base64
+- Validates type (jpg, png, etc)
+- 20MB limit
+- Converts RGBA → RGB
 
 ### 4. Prompts
 - See `docs/PROMPTS.md`
 
-## Diferenças para Omni-Vision
+## Differences from Omni-Vision
 
-1. **Provedor**: Ollama local vs Multi-provider (OpenRouter, OpenAI, Ollama, LM Studio, MiniMax)
-2. **Auth**: Sem auth vs Bearer token (cloud)
+1. **Provider**: Local Ollama vs Multi-provider (OpenRouter, OpenAI, Ollama, LM Studio, MiniMax)
+2. **Auth**: No auth vs Bearer token (cloud)
 3. **API format**: `/api/generate` vs `/api/v1/chat/completions`
 4. **Image format**: `images: [base64]` vs `content: [{type: 'image_url'}]`
-5. **Modelo default**: `llava-phi3` (reference) vs `qwen3-vl:4b` (nosso)
+5. **Default model**: `llava-phi3` (reference) vs `qwen3-vl:4b` (ours)
 
-## Código Relevante Extraído
+## Relevant Extracted Code
 
 ### Ollama Request Format
 ```python

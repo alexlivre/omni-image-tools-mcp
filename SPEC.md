@@ -1,122 +1,121 @@
 # Omni-Image-Tools MCP
 
-MCP (Model Context Protocol) com ferramentas de imagem (visão + processamento) para dar capacidade visual a modelos de IA. Suporta múltiplos provedores: OpenRouter, OpenAI, Ollama e LM Studio.
-
-**Baseado em**: https://github.com/xkiranj/ollama-vision-mcp
+MCP (Model Context Protocol) with image tools (vision + processing) to give visual capabilities to AI models. Supports multiple providers: OpenRouter, OpenAI, Ollama, LM Studio and MiniMax.
 
 ---
 
-## Conceito
+## Concept
 
-Este projeto permite que modelos de IA sem capacidade visual "enxerguem" através de um MCP server que traduz imagens em descrições textuais. Oferece:
-- **Ferramentas de Visão**: analyze, describe, identify, read_text, compare
-- **Ferramentas de Processamento**: prepare, info, crop, convert
-- **Multi-Provider**: OpenRouter, OpenAI, Ollama, LM Studio
+This project lets AI models without visual capability "see" through an MCP server that translates images into text descriptions. It offers:
+- **Vision Tools**: analyze, identify, read_text, compare
+- **Processing Tools**: prepare, info, crop, convert
+- **Multi-Provider**: OpenRouter, OpenAI, Ollama, LM Studio, MiniMax
 
 ---
 
-## Ferramentas (Tools)
+## Tools
 
-## Regra de Pré-processamento Automático de Imagens
+## Automatic Image Preprocessing Rule
 
-Toda imagem recebida por uma vision tool passa por um pipeline fixo **antes** de qualquer análise ou envio ao modelo. **Não é opt-out.**
+Every image received by a vision tool goes through a fixed pipeline **before** any analysis or sending to the model. **Not opt-out.**
 
-- Redimensiona (Lanczos) mantendo proporção: lado maior máx = 1536 px; imagens com lado < 768 px ficam no tamanho original.
-- Converte para RGB, salva como JPEG q90 progressivo otimizado.
-- Meta: 300 KB–1 MB.
-- Cache em tempdir por SHA-256.
-- Para `extract_object`, o crop final usa a imagem **original** (não a pré-processada).
+- Resizes (Lanczos) keeping the aspect ratio: max longest side = 1536 px; images with a side < 768 px keep the original size.
+- Converts to RGB, saves as progressive optimized JPEG q90.
+- Target: 300 KB–1 MB.
+- Cached in tempdir by SHA-256.
+- For `extract_object`, the final crop uses the **original** image (not the preprocessed one).
 
-Detalhes: ver `docs/PROCESSING.md`.
+Details: see `docs/PROCESSING.md`.
 
 ### MVP (v1)
 
-| Tool | Descrição | Parâmetros |
+| Tool | Description | Parameters |
 |------|-----------|-----------|
-| `analyze_image` | Análise personalizável de imagem | `image_path`, `prompt`, `model`, `detail_level` |
-| `identify_objects` | Lista objetos identificáveis | `image_path`, `include_count`, `include_location`, `categories`, `min_confidence` |
-| `read_text` | Extrai texto visível (OCR) | `image_path`, `preserve_formatting`, `language_hint` |
+| `analyze_image` | Customizable image analysis | `image_path`, `prompt`, `model`, `detail_level` |
+| `identify_objects` | Lists identifiable objects | `image_path`, `include_count`, `include_location`, `categories`, `min_confidence` |
+| `read_text` | Extracts visible text (OCR) | `image_path`, `preserve_formatting`, `language_hint` |
 
-### v2 - Visão
+### v2 - Vision
 
-| Tool | Descrição | Parâmetros |
+| Tool | Description | Parameters |
 |------|-----------|-----------|
-| `compare_images` | Comparar duas imagens | `image_path_1`, `image_path_2`, `comparison_type` |
+| `compare_images` | Compares two images | `image_path_1`, `image_path_2`, `comparison_type` |
 
-### v2 - Processamento
+### v2 - Processing
 
-| Tool | Descrição | Parâmetros |
+| Tool | Description | Parameters |
 |------|-----------|-----------|
-| `prepare_image` | Preparar imagem para API (resize, compress) | `image_path`, `max_width`, `max_height`, `format`, `quality` |
-| `get_image_info` | Extrair metadata e EXIF | `image_path`, `include_exif` |
-| `crop_image` | Cortar região específica | `image_path`, `x`, `y`, `width`, `height` |
-| `convert_image_format` | Converter entre formatos | `image_path`, `output_format`, `quality` |
+| `prepare_image` | Prepare image for API (resize, compress) | `image_path`, `max_width`, `max_height`, `format`, `quality` |
+| `get_image_info` | Extract metadata and EXIF | `image_path`, `include_exif` |
+| `crop_image` | Crop a specific region | `image_path`, `x`, `y`, `width`, `height` |
+| `convert_image_format` | Convert between formats | `image_path`, `output_format`, `quality` |
 
-**Detalhes**: See [docs/PROMPTS.md](docs/PROMPTS.md) e [docs/PROCESSING.md](docs/PROCESSING.md)
+**Details**: See [docs/PROMPTS.md](docs/PROMPTS.md) and [docs/PROCESSING.md](docs/PROCESSING.md)
 
 ---
 
-## Provedores Suportados
+## Supported Providers
 
-| Provedor | API Key | URL Base | Tipo |
+| Provider | API Key | Base URL | Type |
 |----------|---------|----------|------|
 | OpenRouter | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1/chat/completions` | Cloud |
 | OpenAI | `OPENAI_API_KEY` | `https://api.openai.com/v1/chat/completions` | Cloud |
 | Ollama | None | `http://localhost:11434/api/generate` | Local |
 | LM Studio | None | `http://localhost:1234/api/generate` | Local |
+| MiniMax | `MINIMAX_API_KEY` | `https://api.minimax.io/v1` | Cloud |
 
-### Modelos Recomendados (OpenRouter)
+### Recommended Models (OpenRouter)
 
-| Modelo | Custo | Velocidade |
+| Model | Cost | Speed |
 |--------|-------|------------|
-| `google/gemini-2.5-flash` | baixo | rápida |
-| `openai/gpt-4o-mini` | baixo | rápida |
-| `anthropic/claude-sonnet-4.6` | médio | média |
-| `anthropic/claude-opus-4.7` | alto | altíssima |
+| `google/gemini-2.5-flash` | low | fast |
+| `openai/gpt-4o-mini` | low | fast |
+| `anthropic/claude-sonnet-4.6` | medium | medium |
+| `anthropic/claude-opus-4.7` | high | very high |
 
-### Modelos Recomendados (Ollama)
+### Recommended Models (Ollama)
 
-| Modelo | Tamanho | Context | Notes |
+| Model | Size | Context | Notes |
 |--------|---------|---------|-------|
 | `qwen3-vl:4b` | 3.3GB | 256K | ✅ **Default**, Visual Agent, spatial understanding |
-| `qwen3-vl:2b` | 1.9GB | 256K | Leve, bom para machines fracas |
-| `qwen3-vl:8b` | 6.1GB | 256K | Mais capaz, requer mais RAM |
-| `moondream` | ~1GB | 4K | Muito leve, básico |
-| `llava` | ~7GB | 4K | Clássico, boa compatibilidade |
+| `qwen3-vl:2b` | 1.9GB | 256K | Light, good for weak machines |
+| `qwen3-vl:8b` | 6.1GB | 256K | More capable, needs more RAM |
+| `moondream` | ~1GB | 4K | Very light, basic |
+| `llava` | ~7GB | 4K | Classic, good compatibility |
 
-> **Req**: Ollama 0.12.7+ para Qwen3-VL
+> **Req**: Ollama 0.12.7+ for Qwen3-VL
 
-### Modelos Suportados (Ollama)
+### Supported Models (Ollama)
 
-**Allowlist de modelos seguros:**
+**Safe models allowlist:**
 
-| Modelo | Tamanho | Notas |
+| Model | Size | Notes |
 |--------|---------|-------|
 | `qwen3-vl:4b` | 3.3GB | ✅ **Default** |
-| `qwen3-vl:2b` | 1.9GB | Leve |
+| `qwen3-vl:2b` | 1.9GB | Light |
 
-> Modelos adicionais podem ser ativados via env `OLLAMA_ALLOWED_MODELS`, mas não fazem parte do contrato padrão do projeto.
+> Additional models can be enabled via the `OLLAMA_ALLOWED_MODELS` env var, but are not part of the project's standard contract.
 
-### Config Ollama
+### Ollama Config
 
-| Variável | Default | Descrição |
+| Variable | Default | Description |
 |----------|---------|-----------|
-| `OLLAMA_ALLOWED_MODELS` | lista acima | Modelos permitidos |
-| `OLLAMA_AUTO_PULL` | `false` | Auto-download (desligado por segurança) |
+| `OLLAMA_ALLOWED_MODELS` | list above | Allowed models |
+| `OLLAMA_AUTO_PULL` | `false` | Auto-download (off by default for safety) |
 
-**Comportamento:**
-- Se `OLLAMA_ALLOWED_MODELS` não definido → usa lista padrão
-- Se definido → usa lista do usuário
-- Se modelo fora da lista → erro claro
-- `OLLAMA_AUTO_PULL: false` por segurança (não baixa GBs sem querer)
+**Behavior:**
+- If `OLLAMA_ALLOWED_MODELS` is not set → uses the default list
+- If set → uses the user's list
+- If a model is outside the list → clear error
+- `OLLAMA_AUTO_PULL: false` for safety (no accidental GB downloads)
 
 ---
 
-## Configuração
+## Configuration
 
-A configuração vem da **host app** (a aplicação que está usando o MCP) via env vars:
+Configuration comes from the **host app** (the application using the MCP) via env vars:
 
-| Aplicação | Arquivo de Config |
+| Application | Config File |
 |-----------|-------------------|
 | OpenCode | `opencode.json` |
 | Claude Desktop | `claude_desktop_config.json` |
@@ -136,27 +135,28 @@ A configuração vem da **host app** (a aplicação que está usando o MCP) via 
 
 ### Environment Variables
 
-| Variável | Obrigatório | Default | Descrição |
+| Variable | Required | Default | Description |
 |----------|-------------|---------|-----------|
-| `OMNI_VISION_API_KEY` | Sim* | - | API key (*exceto local) |
-| `OMNI_VISION_PROVIDER` | Sim | - | `openrouter`, `openai`, `ollama`, `lmstudio` |
-| `OMNI_VISION_DEFAULT_MODEL` | Não | `qwen3-vl:4b` (ollama), `google/gemini-2.5-flash` (openrouter) | Modelo default |
-| `OMNI_VISION_TIMEOUT` | Não | `120` | Timeout em segundos |
-| `OLLAMA_BASE_URL` | Não | `http://localhost:11434` | URL do Ollama |
-| `OLLAMA_ALLOWED_MODELS` | Não | (lista padrão) | Modelos permitidos |
-| `OLLAMA_AUTO_PULL` | Não | `false` | Auto-download modelos |
-| `LMSTUDIO_BASE_URL` | Não | `http://localhost:1234` | URL do LM Studio |
+| `OMNI_VISION_API_KEY` | Yes* | - | Provider API key (*except local) |
+| `OMNI_VISION_PROVIDER` | Yes | - | `openrouter`, `openai`, `ollama`, `lmstudio`, `minimax` |
+| `OMNI_VISION_DEFAULT_MODEL` | No | `qwen3-vl:4b` (ollama), `google/gemini-2.5-flash` (openrouter) | Default model |
+| `OMNI_VISION_TIMEOUT` | No | `120` | Timeout in seconds |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama URL |
+| `OLLAMA_ALLOWED_MODELS` | No | (default list) | Allowed models |
+| `OLLAMA_AUTO_PULL` | No | `false` | Auto-download models |
+| `LMSTUDIO_BASE_URL` | No | `http://localhost:1234` | LM Studio URL |
+| `MINIMAX_BASE_URL` | No | `https://api.minimax.io/v1` | MiniMax endpoint (China: `https://api.minimaxi.com/v1`) |
 
-### Escolha do Provedor e Modelo
+### Provider and Model Selection
 
-**Global**: Configurado via env vars na host app (provider + default model).
+**Global**: Configured via env vars in the host app (provider + default model).
 
-**Per-Call Override**: Usuário pode sobrescrever o modelo por chamada:
+**Per-Call Override**: Users can override the model per call:
 ```
 analyze_image(image_path="...", model="anthropic/claude-opus-4.7")
 ```
 
-**Validação Estrita**: Modelo incompatível com provider = erro claro.
+**Strict Validation**: Model incompatible with provider = clear error.
 
 ---
 
@@ -164,67 +164,66 @@ analyze_image(image_path="...", model="anthropic/claude-opus-4.7")
 
 ### Requirements
 
-| Requisito | Versão | Notas |
+| Requirement | Version | Notes |
 |-----------|--------|-------|
-| Python | **3.11+** | MCP SDK não suporta 3.14 ainda |
-| Ollama | 0.12.7+ | Para Qwen3-VL |
-| Git | Any | Para clone |
+| Python | **3.11+** | MCP SDK doesn't support 3.14 yet |
+| Ollama | 0.12.7+ | For Qwen3-VL |
+| Git | Any | For cloning |
 
 ### Dependencies
 
 ```
 # Core
-mcp>=1.0.0
+mcp>=1.28.0,<2.0.0
 httpx
 pillow>=10.0.0
 pydantic>=2.0.0
 pyyaml
 
-# Optional (para processing)
+# Optional (for processing)
 ExifRead>=3.0.0
 pillow-heif>=0.12.0
 ```
 
-### Instalação
+### Installation
 
 ```bash
-# Clone/fork do repo
+# Clone/fork the repo
 git clone https://github.com/xkiranj/ollama-vision-mcp omni-image-tools-mcp
 cd omni-image-tools-mcp
 
-# Setup venv (Python 3.11)
+# Set up venv (Python 3.11)
 python -m venv venv
 .\venv\Scripts\Activate
 
-# Instalar dependências
+# Install dependencies
 pip install -e .
 ```
 
 ---
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 omni-image-tools-mcp/
 ├── src/
 │   ├── __init__.py
 │   ├── server.py              # MCP server + tool registry
-│   ├── config.py              # Lê env vars
-│   ├── image_handler.py       # Processamento de imagem
+│   ├── config.py              # Reads env vars
 │   │
 │   ├── providers/             # FACTORY PATTERN
 │   │   ├── __init__.py       # ProviderFactory.get()
 │   │   ├── base.py           # VisionProvider (ABC)
 │   │   ├── openrouter.py
 │   │   ├── openai.py
-│   │   ├── ollama.py         # Com detecção dinâmica de modelos
-│   │   └── lmstudio.py
+│   │   ├── ollama.py
+│   │   ├── lmstudio.py
+│   │   └── minimax.py
 │   │
 │   ├── tools/                # REGISTRY PATTERN
 │   │   ├── __init__.py       # ToolRegistry
 │   │   ├── vision/
 │   │   │   ├── analyze.py
-│   │   │   ├── describe.py
 │   │   │   ├── identify.py
 │   │   │   ├── read_text.py
 │   │   │   └── compare.py    # v2
@@ -236,13 +235,13 @@ omni-image-tools-mcp/
 │   │
 │   └── prompts/
 │       ├── vision.yaml
-│       └── processing.yaml
+│       └── vision.pt.yaml
 │
 ├── scripts/
-│   └── cli.py                 # CLI para testes durante dev
+│   └── cli.py                 # CLI for dev testing
 │
 ├── tests/
-│   └── fixtures/              # Imagens para teste
+│   └── fixtures/              # Test images
 │       ├── simple.jpg
 │       ├── complex.jpg
 │       ├── text_sample.png
@@ -263,69 +262,68 @@ omni-image-tools-mcp/
 └── README.md
 ```
 
-**Detalhes**: See [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
+**Details**: See [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
 
-**Detalhes da arquitetura**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+**Architecture details**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
 
-## Testing Durante Desenvolvimento
+## Testing During Development
 
-Testar cada tool **isoladamente** via CLI, **antes** de integrar com host app.
+Test each tool **in isolation** via CLI, **before** integrating with the host app.
 
 ### CLI Commands
 
 ```bash
 # Vision tools
-python scripts/cli.py analyze --image foto.jpg --provider ollama --model qwen3-vl:4b
-python scripts/cli.py describe --image foto.jpg --provider openrouter
-python scripts/cli.py identify --image foto.jpg
+python scripts/cli.py analyze --image photo.jpg --provider ollama --model qwen3-vl:4b
+python scripts/cli.py identify --image photo.jpg
 python scripts/cli.py read-text --image screenshot.png
 
 # Processing tools
-python scripts/cli.py info --image foto.jpg
-python scripts/cli.py prepare --image foto.jpg --max-size 512
+python scripts/cli.py info --image photo.jpg
+python scripts/cli.py prepare --image photo.jpg --max-size 512
 
 # Benchmark
-python scripts/cli.py benchmark --image foto.jpg --providers ollama,openrouter
+python scripts/cli.py benchmark --image photo.jpg --providers ollama,openrouter
 ```
 
-### Imagens de Teste (fixtures)
+### Test Images (fixtures)
 
-| Imagem | Uso |
+| Image | Use |
 |--------|-----|
-| `simple.jpg` | Objeto único |
-| `complex.jpg` | Múltiplos objetos |
+| `simple.jpg` | Single object |
+| `complex.jpg` | Multiple objects |
 | `text_sample.png` | OCR |
-| `multilanguage.jpg` | Texto multilíngue |
+| `multilanguage.jpg` | Multilingual text |
 
 ### Tool Design Standards
 
-Tools seguem padrões eficientes para comunicação AI-MCP:
+Tools follow efficient standards for AI-MCP communication:
 
-- **Descriptions**: Template com "Use when", Input/Output, Examples
-- **Schemas**: Types rigorosos, enums, defaults, examples
-- **Responses**: Formato consistente com status, error_code, metadata
-- **Errors**: Códigos claros + retryable flag + help messages
+- **Descriptions**: Template with "Use when", Input/Output, Examples
+- **Schemas**: Rigorous types, enums, defaults, examples
+- **Responses**: Consistent format with status, error_code, metadata
+- **Errors**: Clear codes + retryable flag + help messages
 
-**Detalhes**: See [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
+**Details**: See [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
 
 ---
 
 ## Links
 
-- **Spec detalhada**: Este documento
+- **Detailed spec**: This document
 - **Prompts**: [docs/PROMPTS.md](docs/PROMPTS.md)
-- **Processamento**: [docs/PROCESSING.md](docs/PROCESSING.md)
-- **Arquitetura**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Decisões**: [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
-- **Estudo original**: [docs/REFERENCE.md](docs/REFERENCE.md)
-- **Progresso**: [tasks/TODO.md](tasks/TODO.md)
-- **Plano de Implementação**: [tasks/IMPLEMENTATION_PLAN.md](tasks/IMPLEMENTATION_PLAN.md)
+- **Processing**: [docs/PROCESSING.md](docs/PROCESSING.md)
+- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Decisions**: [docs/ARCHITECTURE_DECISION.md](docs/ARCHITECTURE_DECISION.md)
+- **Original study**: [docs/REFERENCE.md](docs/REFERENCE.md)
+- **Progress**: [tasks/TODO.md](tasks/TODO.md)
+- **Implementation Plan**: [tasks/IMPLEMENTATION_PLAN.md](tasks/IMPLEMENTATION_PLAN.md)
 
 ---
 
 ## Status
 
-:white_check_mark: Estudo completo
-:hourglass: Aguardando fork e implementação
+:white_check_mark: Study complete
+:hourglass: Awaiting fork and implementation

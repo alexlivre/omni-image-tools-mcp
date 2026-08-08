@@ -2,74 +2,74 @@
 
 ## Progress
 
-### Fase 1: Estudo
-- [x] Analisar repo de referência (ollama-vision-mcp)
-- [x] Documentar prompts
-- [x] Documentar arquitetura
-- [x] Criar estrutura de docs
-- [x] Entender padrão de configuração (env vars da host app)
-- [x] Definir ferramentas (MVP + v2)
-- [x] Definir ferramentas de processamento (v2)
-- [x] Decidir por arquitetura extensível (ADR-001)
+### Phase 1: Study
+- [x] Review reference repo (ollama-vision-mcp)
+- [x] Document prompts
+- [x] Document architecture
+- [x] Create docs structure
+- [x] Understand configuration pattern (host app env vars)
+- [x] Define tools (MVP + v2)
+- [x] Define processing tools (v2)
+- [x] Decide on extensible architecture (ADR-001)
 - [x] Tool efficiency standards
 - [x] Error handling excellence
-- [x] Allowlist de modelos Ollama
+- [x] Ollama model allowlist
 
-### Fase 2: Fork e Setup (Fase 1 do Plano)
-- [ ] Forkar o repo de referência (N/A: criado como repo standalone `omni-image-tools-mcp`, não forked)
-- [x] Criar estrutura de diretórios
-- [x] Implementar error classes
-- [x] Implementar config parsing
-- [x] Criar fixtures de teste
+### Phase 2: Fork and Setup (Phase 1 of the Plan)
+- [ ] Fork the reference repo (N/A: created as standalone repo `omni-image-tools-mcp`, not forked)
+- [x] Create directory structure
+- [x] Implement error classes
+- [x] Implement config parsing
+- [x] Create test fixtures
 
-### Fase 3: Foundation (Fase 2 do Plano)
-- [x] Implementar VisionProvider ABC (providers/base.py)
-- [x] Implementar ProviderFactory (providers/__init__.py)
-- [x] Implementar ToolRegistry (tools/__init__.py)
-- [x] Definir schemas para todas tools
-- [ ] Criar prompts/vision.yaml e prompts/processing.yaml (vision.yaml ok; processing.yaml não existe — prompts vivem no código)
-- [x] CLI com commands (help, providers list, tools list)
+### Phase 3: Foundation (Phase 2 of the Plan)
+- [x] Implement VisionProvider ABC (providers/base.py)
+- [x] Implement ProviderFactory (providers/__init__.py)
+- [x] Implement ToolRegistry (tools/__init__.py)
+- [x] Define schemas for all tools
+- [ ] Create prompts/vision.yaml and prompts/processing.yaml (vision.yaml ok; processing.yaml doesn't exist — prompts live in code)
+- [x] CLI with commands (help, providers list, tools list)
 
-### Fase 4: Ollama Provider (Fase 3 do Plano)
-- [x] Implementar OllamaProvider (providers/ollama.py)
-- [x] Teste via CLI
-- [x] Adicionar --debug mode
+### Phase 4: Ollama Provider (Phase 3 of the Plan)
+- [x] Implement OllamaProvider (providers/ollama.py)
+- [x] Test via CLI
+- [x] Add --debug mode
 
-### Fase 5: Vision MVP (Fase 4 do Plano)
-- [x] Implementar analyze_image
-- [ ] Implementar describe_image (não implementado como tool; coberto por `analyze_image`)
-- [x] Implementar identify_objects
-- [x] Implementar read_text
+### Phase 5: Vision MVP (Phase 4 of the Plan)
+- [x] Implement analyze_image
+- [ ] Implement describe_image (not implemented as a tool; covered by `analyze_image`)
+- [x] Implement identify_objects
+- [x] Implement read_text
 
-### Fase 6: Vision v2 (Fase 5 do Plano)
-- [x] Implementar compare_images
+### Phase 6: Vision v2 (Phase 5 of the Plan)
+- [x] Implement compare_images
 
-### Fase 7: Processing (Fase 6 do Plano)
-- [x] Implementar prepare_image
-- [x] Implementar get_image_info
-- [x] Implementar crop_image
-- [x] Implementar convert_image_format
+### Phase 7: Processing (Phase 6 of the Plan)
+- [x] Implement prepare_image
+- [x] Implement get_image_info
+- [x] Implement crop_image
+- [x] Implement convert_image_format
 
-### Fase 8: Cloud Providers (Fase 7 do Plano)
-- [x] Implementar OpenRouterProvider
-- [x] Implementar OpenAIProvider
-- [x] Implementar LMStudioProvider
+### Phase 8: Cloud Providers (Phase 7 of the Plan)
+- [x] Implement OpenRouterProvider
+- [x] Implement OpenAIProvider
+- [x] Implement LMStudioProvider
 
-### Fase 9: Polish (Fase 8 do Plano)
+### Phase 9: Polish (Phase 8 of the Plan)
 - [x] README.md
-- [x] Teste final (benchmark)
-- [x] Atualizar docs
+- [x] Final test (benchmark)
+- [x] Update docs
 
 ---
 
-## Estrutura Alvo
+## Target Structure
 
 ```
 omni-image-tools-mcp/
 ├── src/
 │   ├── server.py              # MCP setup + tool registry
 │   ├── config.py              # Env vars + config file
-│   ├── image_handler.py       # Mantém do original
+│   ├── image_handler.py       # Kept from the original
 │   ├── errors.py              # Error classes
 │   │
 │   ├── providers/             # FACTORY PATTERN
@@ -99,10 +99,10 @@ omni-image-tools-mcp/
 │       └── processing.yaml
 │
 ├── scripts/
-│   └── cli.py                 # CLI para testes durante dev
+│   └── cli.py                 # CLI for testing during dev
 │
 └── tests/
-    └── fixtures/               # Imagens para teste
+    └── fixtures/               # Images for testing
         ├── simple.jpg
         ├── complex.jpg
         ├── text_sample.png
@@ -111,55 +111,55 @@ omni-image-tools-mcp/
 
 ---
 
-## Dúvidas em Aberto
+## Open Questions
 
-- [x] Adicionar cache de resultados? (Task 13: `src/utils/result_cache.py`, `OMNI_VISION_CACHE`)
-- [x] Rate limiting por modelo? (Task 14: `src/utils/rate_limiter.py`, `OMNI_RATE_LIMIT_PER_MIN`)
-- [x] Fallback automático entre modelos? (Task 15: `fallback_models` em `src/config.py` / `openai_compatible.py`, `OMNI_FALLBACK_MODELS`)
-- [x] Internationalização dos prompts? (Task 16: `src/prompts/vision.pt.yaml`, `OMNI_LANG`)
+- [x] Add result caching? (Task 13: `src/utils/result_cache.py`, `OMNI_VISION_CACHE`)
+- [x] Per-model rate limiting? (Task 14: `src/utils/rate_limiter.py`, `OMNI_RATE_LIMIT_PER_MIN`)
+- [x] Automatic model fallback? (Task 15: `fallback_models` in `src/config.py` / `openai_compatible.py`, `OMNI_FALLBACK_MODELS`)
+- [x] Prompt internationalization? (Task 16: `src/prompts/vision.pt.yaml`, `OMNI_LANG`)
 
 ---
 
-## Como Adicionar Features
+## How to Add Features
 
-### Nova Tool
-1. Criar `src/tools/vision/minha_tool.py`
-2. Definir classe com `name`, `description`, `input_schema`, `execute()`
-3. Importar e registrar no `tools/__init__.py`
+### New Tool
+1. Create `src/tools/vision/my_tool.py`
+2. Define a class with `name`, `description`, `input_schema`, `execute()`
+3. Import and register in `tools/__init__.py`
 
-### Novo Provider
-1. Criar `src/providers/meu_provider.py`
-2. Herdar de `VisionProvider`
-3. Implementar `analyze()`
-4. Adicionar ao dict em `providers/__init__.py`
+### New Provider
+1. Create `src/providers/my_provider.py`
+2. Inherit from `VisionProvider`
+3. Implement `analyze()`
+4. Add to the dict in `providers/__init__.py`
 
-### Modificar Prompt
-Editar `src/prompts/vision.yaml` — não precisa mexer código.
+### Modify Prompt
+Edit `src/prompts/vision.yaml` — no code changes needed.
 
-### Fase 10: Pré-processamento Automático
-- [x] Criar `src/utils/image_preprocessor.py` (pipeline fixo, cache por SHA-256)
-- [x] Integrar em `analyze_image`, `read_text`, `identify_objects`, `compare_images`
-- [x] Integrar em `extract_object` (preprocessa input, crop do original)
-- [x] Documentar em `docs/PROCESSING.md` e `SPEC.md`
+### Phase 10: Automatic Preprocessing
+- [x] Create `src/utils/image_preprocessor.py` (fixed pipeline, SHA-256 cache)
+- [x] Integrate into `analyze_image`, `read_text`, `identify_objects`, `compare_images`
+- [x] Integrate into `extract_object` (preprocess input, crop from original)
+- [x] Document in `docs/PROCESSING.md` and `SPEC.md`
 
-### Fase 11: Hardening de Segurança e Protocolo
-- [x] `src/utils/security.py`: SSRF (`is_safe_url`), path resolution (`resolve_safe_path`), `clamp`, limites
-- [x] `download_image`: bloqueio SSRF, redirects revalidados, download streaming com teto 20MB
-- [x] `server.py`: `resolve_safe_path` no preflight de `image_path`/`image_paths`; `isError=true` em falhas de tool; exceções específicas
-- [x] Annotations + `title` em todas as tools; `tools/list` determinístico (descrições estáticas)
-- [x] `instructions` server-level (mitigação de prompt injection)
-- [x] `get_image_info`: EXIF desligado por padrão + aviso de GPS
-- [x] Debug dos providers roteado para stderr (não corrompe stdio)
-- [x] `output_dir` configurável (`OMNI_OUTPUT_DIR`, default `outputs/`)
-- [x] DRY: `OpenAICompatibleProvider` (OpenAI/OpenRouter); `is_local` como atributo do provider
-- [x] Remover placeholder morto do registry; CLI `list_tools` derivado dos schemas; benchmark filtra providers
-- [x] `with` em `Image.open`/`open` (sem resource leak); constantes nomeadas
-- [x] Testes: security (26), protocolo (13), config, providers, download; mypy verde; coverage configurado
+### Phase 11: Security and Protocol Hardening
+- [x] `src/utils/security.py`: SSRF (`is_safe_url`), path resolution (`resolve_safe_path`), `clamp`, limits
+- [x] `download_image`: SSRF blocking, revalidated redirects, streaming download capped at 20MB
+- [x] `server.py`: `resolve_safe_path` in `image_path`/`image_paths` preflight; `isError=true` on tool failures; specific exceptions
+- [x] Annotations + `title` on all tools; deterministic `tools/list` (static descriptions)
+- [x] `instructions` server-level (prompt injection mitigation)
+- [x] `get_image_info`: EXIF off by default + GPS warning
+- [x] Provider debug routed to stderr (doesn't corrupt stdio)
+- [x] Configurable `output_dir` (`OMNI_OUTPUT_DIR`, default `outputs/`)
+- [x] DRY: `OpenAICompatibleProvider` (OpenAI/OpenRouter); `is_local` as a provider attribute
+- [x] Remove dead registry placeholder; CLI `list_tools` derived from schemas; benchmark filters providers
+- [x] `with` on `Image.open`/`open` (no resource leaks); named constants
+- [x] Tests: security (26), protocol (13), config, providers, download; mypy green; coverage configured
 
-## Backlog — entregue neste plano
+## Backlog — delivered in this plan
 
 - [x] CI workflow (Task 1): `.github/workflows/ci.yml` (ruff, mypy, pytest + coverage gate)
-- [x] FastMCP server (Tasks 10-11): `src/server_fastmcp.py` (progress, meta, entry point em pyproject)
+- [x] FastMCP server (Tasks 10-11): `src/server_fastmcp.py` (progress, meta, entry point in pyproject)
 - [x] LM Studio provider (Task 12): `src/providers/lmstudio.py` (OpenAI-compatible, local)
 - [x] Cache / rate-limit / fallback / i18n (Tasks 13-16): `result_cache.py`, `rate_limiter.py`, `fallback_models`, `vision.pt.yaml`
 - [x] Evaluations runner (Task 17): `scripts/run_evaluations.py` + `scripts/evaluations.xml` (10 QA pairs)

@@ -1,12 +1,12 @@
 # Prompts Engineering
 
-Prompts usados em cada tool do MCP.
+Prompts used in each MCP tool.
 
-## Análise Completa dos Prompts (ollama-vision-mcp-reference)
+## Complete Prompts Analysis (ollama-vision-mcp-reference)
 
-### Prompts Extraídos do Código Original
+### Prompts Extracted from the Original Code
 
-| Tool | Prompt | Linha |
+| Tool | Prompt | Line |
 |------|--------|-------|
 | `analyze_image` | `"Describe this image in detail"` (default) | server.py:132 |
 | `identify_objects` | `"List all identifiable objects in this image. Format as a bulleted list"` | server.py:141 |
@@ -14,49 +14,49 @@ Prompts usados em cada tool do MCP.
 
 ---
 
-## Ferramentas do Omni-Vision MCP
+## Omni-Vision MCP Tools
 
-### MVP (v1) — Melhorar as Existentes
+### MVP (v1) — Improve the Existing Ones
 
-| Tool | Descrição | Novos Parâmetros |
+| Tool | Description | New Parameters |
 |------|-----------|------------------|
-| `analyze_image` | Análise personalizável de imagem | `detail_level`, `focus` |
-| `identify_objects` | Lista objetos identificáveis | `include_count`, `include_location`, `categories`, `min_confidence` |
-| `read_text` | Extrai texto visível (OCR) | `preserve_formatting`, `language_hint` |
+| `analyze_image` | Customizable image analysis | `detail_level`, `focus` |
+| `identify_objects` | Lists identifiable objects | `include_count`, `include_location`, `categories`, `min_confidence` |
+| `read_text` | Extracts visible text (OCR) | `preserve_formatting`, `language_hint` |
 
-### v2 — Novas Ferramentas
+### v2 — New Tools
 
-| Tool | Descrição |
+| Tool | Description |
 |------|-------------|
-| `compare_images` | Comparar duas imagens (diferenças/semelhanças) |
+| `compare_images` | Compare two images (differences/similarities) |
 
 ---
 
-## Prompts Melhorados (v1)
+## Improved Prompts (v1)
 
 ### 1. `analyze_image`
 
-**Sinais:**
+**Signals:**
 - `detail_level`: "brief" | "standard" | "detailed"
 - `focus`: "all" | "objects" | "scene" | "text" | "colors"
 
-**Prompt base + detail_level:**
+**Base prompt + detail_level:**
 | detail_level | Prompt |
 |--------------|--------|
 | brief | "Briefly describe this image." |
 | standard | "Describe this image in detail." |
 | detailed | "Provide a highly detailed and thorough description of this image, including all elements, patterns, and nuances." |
 
-**Focus adiciona:**
-| focus | Adicional ao prompt |
+**Focus adds:**
+| focus | Added to the prompt |
 |-------|-------------------|
 | objects | "Focus on identifying and describing each distinct object." |
 | scene | "Focus on describing the overall scene, setting, and atmosphere." |
 | text | "Focus on any text, labels, or written content." |
 | colors | "Focus on colors, color harmonies, and color relationships." |
-| all | (sem adicional) |
+| all | (nothing added) |
 
-**Parâmetros:**
+**Parameters:**
 ```python
 analyze_image(
     image_path: str,
@@ -69,33 +69,33 @@ analyze_image(
 
 ### 2. `identify_objects`
 
-**Sinais:**
-- `include_count`: bool — quantos de cada objeto
-- `include_location`: bool — posição na imagem
-- `categories`: list — filtro (["people", "vehicles", "animals", etc)
-- `min_confidence`: float — 0-1, ignorar detecções com baixa confiança
+**Signals:**
+- `include_count`: bool — how many of each object
+- `include_location`: bool — position in the image
+- `categories`: list — filter (["people", "vehicles", "animals", etc)
+- `min_confidence`: float — 0-1, ignore detections with low confidence
 
-**Prompt base:**
+**Base prompt:**
 ```
 "List all identifiable objects in this image. Format as a bulleted list."
 ```
 
-**Com include_count=True:**
+**With include_count=True:**
 ```
 "List all identifiable objects in this image. For each type of object, indicate how many instances appear. Format as a bulleted list with counts."
 ```
 
-**Com include_location=True:**
+**With include_location=True:**
 ```
 "List all identifiable objects in this image. For each object, indicate its approximate location in the image (e.g., 'top-left', 'center', 'bottom-right'). Format as a bulleted list."
 ```
 
-**Com categories filter:**
+**With categories filter:**
 ```
 "Focus on identifying objects in these categories: [categories]. List all identifiable objects from these categories in this image. Format as a bulleted list."
 ```
 
-**Parâmetros:**
+**Parameters:**
 ```python
 identify_objects(
     image_path: str,
@@ -108,26 +108,26 @@ identify_objects(
 
 ### 4. `read_text`
 
-**Sinais:**
-- `preserve_formatting`: bool — manter layout
+**Signals:**
+- `preserve_formatting`: bool — keep layout
 - `language_hint`: str — "en", "pt", "es", etc
 
-**Prompt base:**
+**Base prompt:**
 ```
 "Extract and transcribe all visible text in this image. If no text is visible, say 'No text found'."
 ```
 
-**Com preserve_formatting=True:**
+**With preserve_formatting=True:**
 ```
 "Extract and transcribe all visible text in this image, preserving the original formatting, layout, and structure as much as possible. If no text is visible, say 'No text found'."
 ```
 
-**Com language_hint:**
+**With language_hint:**
 ```
 "Extract and transcribe all visible text in this image. The text appears to be in [language_hint]. If no text is visible, say 'No text found'."
 ```
 
-**Parâmetros:**
+**Parameters:**
 ```python
 read_text(
     image_path: str,
@@ -138,11 +138,11 @@ read_text(
 
 ---
 
-## Ferramentas Futuras (v2+)
+## Future Tools (v2+)
 
 ### `compare_images` (v2)
 
-**Sinais:**
+**Signals:**
 - `comparison_type`: "differences" | "similarities" | "both"
 
 **Prompt:**
@@ -152,7 +152,7 @@ read_text(
 | similarities | "Analyze these two images and describe their key similarities." |
 | both | "Analyze these two images and describe both their key differences and similarities." |
 
-**Parâmetros:**
+**Parameters:**
 ```python
 compare_images(
     image_path_1: str,
@@ -161,14 +161,14 @@ compare_images(
 )
 ```
 
-### `detect_faces` (futuro)
+### `detect_faces` (future)
 
 **Prompt:**
 ```
 "Detect all faces in this image. For each face, provide: approximate age estimate, gender (if identifiable), and dominant emotion if clearly visible."
 ```
 
-### `extract_chart_data` (futuro)
+### `extract_chart_data` (future)
 
 **Prompt:**
 ```
@@ -177,10 +177,10 @@ compare_images(
 
 ---
 
-## Decisões
+## Decisions
 
-- [x] Manter 4 ferramentas originais com melhorias (v1)
-- [x] Adicionar `compare_images` (v2)
-- [x] Prompts em inglês (modelo responde no idioma do usuário)
-- [ ] Internacionalização dos prompts?
-- [ ] System prompt para comportamento geral?
+- [x] Keep the 4 original tools with improvements (v1)
+- [x] Add `compare_images` (v2)
+- [x] Prompts in English (model responds in the user's language)
+- [ ] Internationalization of the prompts?
+- [ ] System prompt for general behavior?

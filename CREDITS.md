@@ -1,70 +1,70 @@
-# Créditos
+# Credits
 
-## Projeto Original
+## Original Project
 
-Este projeto é baseado no [xkiranj/ollama-vision-mcp](https://github.com/xkiranj/ollama-vision-mcp).
+This project is based on [xkiranj/ollama-vision-mcp](https://github.com/xkiranj/ollama-vision-mcp).
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Título** | ollama-vision-mcp |
-| **Autor** | [xkiranj](https://github.com/xkiranj) |
-| **Fonte** | https://github.com/xkiranj/ollama-vision-mcp |
-| **Licença** | [MIT](https://opensource.org/licenses/MIT) |
+| **Title** | ollama-vision-mcp |
+| **Author** | [xkiranj](https://github.com/xkiranj) |
+| **Source** | https://github.com/xkiranj/ollama-vision-mcp |
+| **License** | [MIT](https://opensource.org/licenses/MIT) |
 
-## Sobre o ollama-vision-mcp
+## About ollama-vision-mcp
 
-O ollama-vision-mcp é um servidor MCP que fornece visão computacional para modelos de IA usando Ollama local.
+ollama-vision-mcp is an MCP server that provides computer vision to AI models using local Ollama.
 
-## Modificações Realizadas
+## Modifications Made
 
-| Componente | Original | Este repositório |
+| Component | Original | This repository |
 |------------|----------|------------------|
-| Provedores | Apenas Ollama | Ollama + OpenRouter + OpenAI |
-| Arquitetura | Código monolítico | Modular (ProviderFactory, ToolRegistry) |
-| Gerenciamento GPU | Não tinha | GPU Memory Manager |
-| Ferramentas | 4 básicas | 11 ferramentas completas |
-| Documentação | Básica | Completa com exemplos |
+| Providers | Ollama only | Ollama + OpenRouter + OpenAI + LM Studio + MiniMax |
+| Architecture | Monolithic code | Modular (ProviderFactory, ToolRegistry) |
+| GPU management | None | GPU Memory Manager |
+| Tools | 4 basic | 11 complete tools |
+| Documentation | Basic | Complete with examples |
 
-### Ferramentas Adicionadas
+### Tools Added
 
-| Ferramenta | Descrição |
+| Tool | Description |
 |------------|-----------|
-| xtract_object | Localiza e recorta objetos automaticamente |
-| download_image | Baixa imagens da internet |
-| get_provider_info | Mostra provedor ativo e limites |
-| prepare_image | Redimensiona e otimiza imagens |
-| get_image_info | Obtém metadados de imagens |
-| crop_image | Recorta regiões específicas |
-| convert_image_format | Converte entre formatos |
+| `extract_object` | Locates and crops objects automatically |
+| `download_image` | Downloads images from the internet |
+| `get_provider_info` | Shows the active provider and its limits |
+| `prepare_image` | Resizes and optimizes images |
+| `get_image_info` | Reads image metadata |
+| `crop_image` | Crops specific regions |
+| `convert_image_format` | Converts between formats |
 
-### Provedores Adicionados
+### Providers Added
 
-| Provedor | Tipo | Custo |
+| Provider | Type | Cost |
 |----------|------|-------|
-| OpenRouter | Nuvem | Pago por uso |
-| OpenAI | Nuvem | Pago por uso |
-| LM Studio | Local | Gratuito |
+| OpenRouter | Cloud | Pay-per-use |
+| OpenAI | Cloud | Pay-per-use |
+| LM Studio | Local | Free |
+| MiniMax | Cloud | Pay-per-use |
 
-## Licença
+## License
 
-Este projeto é licenciado sob a **MIT**, a mesma licença do original.
+This project is licensed under the **MIT**, the same license as the original.
 
-Conforme os termos da MIT:
-- ✅ O aviso de copyright é mantido
-- ✅ A licença completa é incluída (LICENSE)
-- ✅ A isenção de garantia é mantida
+Per the MIT terms:
+- ✅ The copyright notice is preserved
+- ✅ The full license is included (LICENSE)
+- ✅ The warranty disclaimer is preserved
 
-## Atribuição de Copyright
+## Copyright Attribution
 
-`
-Copyright 2026 Alex Breno
-Copyright 2024 xkiranj (ollama-vision-mcp original)
-`
+```
+Copyright 2026 Alex Santos
+```
 
-## Reconhecimentos
+## Acknowledgments
 
-Agradecemos ao xkiranj por criar o ollama-vision-mcp, que forneceu a base para este servidor MCP de visão computacional expandido.
+We thank xkiranj for creating ollama-vision-mcp, which provided the foundation for this expanded computer-vision MCP server.
 
 ---
 
-*Este arquivo foi adicionado como boa prática de atribuição, conforme exigido pela licença MIT.*
+*This file was added as an attribution best practice, as required by the MIT license.*

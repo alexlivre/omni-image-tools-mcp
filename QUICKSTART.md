@@ -2,82 +2,66 @@
 
 ## 🚀 5-Minute Setup
 
-### 1. Install Ollama (if not already installed)
+### 1. Install
 
-**Windows**: Download from https://ollama.ai/download/windows
-
-**macOS/Linux**:
 ```bash
-# macOS
-brew install ollama
-
-# Linux
-curl -fsSL https://ollama.ai/install.sh | sh
+pip install omni-image-tools-mcp
 ```
 
-### 2. Start Ollama & Get Vision Model
+Requires Python 3.10+. For development, use [uv](https://docs.astral.sh/uv/):
 
 ```bash
-# Terminal 1: Start Ollama
+git clone https://github.com/alexlivre/omni-image-tools-mcp
+cd omni-image-tools-mcp
+uv sync
+uv sync --extra dev
+```
+
+### 2. Pick a provider
+
+**Local (Ollama):**
+```bash
+# Make sure Ollama is running and the model is pulled
 ollama serve
-
-# Terminal 2: Pull vision model
-ollama pull llava-phi3
+ollama pull qwen3-vl:2b
 ```
 
-### 3. Install Ollama Vision MCP
-
+**Cloud (MiniMax):**
 ```bash
-# Navigate to the project directory
-cd C:\Users\ekirjad\MCP\ollama-vision-mcp
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-# Install the package
-pip install -e .
-# Or just install requirements
-pip install -r requirements.txt
+export OMNI_VISION_PROVIDER=minimax
+export MINIMAX_API_KEY=your-key
 ```
 
-### 4. Test Installation
+See the [README](./README.md) for all providers (Ollama, OpenAI, OpenRouter, LM Studio, MiniMax).
 
-```bash
-cd C:\My_Files\ollama-vision-mcp
-python tests/test_server.py
-```
+### 3. Configure your MCP client
 
-### 5. Configure Claude Desktop
-
-Add to `%APPDATA%\Claude\claude_desktop_config.json`:
+The `omni-image-tools` console script starts the server over stdio. Point your client at it:
 
 ```json
 {
-  "mcpServers": {
-    "ollama-vision": {
-      "command": "C:\\Users\\ekirjad\\MCP\\ollama-vision-mcp\\venv\\Scripts\\python.exe",
-      "args": ["-m", "src.server"],
-      "cwd": "C:\\Users\\ekirjad\\MCP\\ollama-vision-mcp"
+  "mcp": {
+    "omni-image-tools": {
+      "type": "local",
+      "command": ["omni-image-tools"],
+      "environment": {
+        "OMNI_VISION_PROVIDER": "ollama",
+        "OMNI_VISION_DEFAULT_MODEL": "qwen3-vl:2b"
+      },
+      "enabled": true
     }
   }
 }
 ```
 
-**Note**: If you installed without virtual environment, use `"command": "python"` instead.
+For **opencode**, add that block to `~/.config/opencode/opencode.json`. For Claude Desktop, use `%APPDATA%\Claude\claude_desktop_config.json` with the `mcpServers` key.
 
-### 6. Restart Claude Desktop
+### 4. Restart your client
 
-Close and reopen Claude Desktop to load the new server.
+Close and reopen your MCP client to load the new server.
 
-### 7. Test It!
+### 5. Test it!
 
-Try these commands in Claude:
 - "Describe the image at C:/path/to/your/image.jpg"
 - "What objects are in this image: C:/path/to/photo.png"
 - "Read the text from C:/path/to/document.png"
@@ -85,11 +69,23 @@ Try these commands in Claude:
 ## ✅ Success Indicators
 
 You'll know it's working when:
-1. `ollama list` shows llava-phi3
-2. Test script shows all green checkmarks
-3. Claude can analyze your images
+1. The vision tools (`analyze_image`, `identify_objects`, `read_text`) appear in your client
+2. `get_provider_info` shows the active provider
+3. The AI can analyze your images
 
 ## 🔧 Troubleshooting
+
+**"Provider not found"**
+```bash
+# Set the provider
+export OMNI_VISION_PROVIDER=ollama
+```
+
+**"API key required"**
+```bash
+# Cloud providers need a key
+export OMNI_VISION_API_KEY=your-key
+```
 
 **"Cannot connect to Ollama"**
 ```bash
@@ -97,14 +93,8 @@ You'll know it's working when:
 ollama serve
 ```
 
-**"No vision models found"**
+**"Request timed out"**
 ```bash
-# Pull the model
-ollama pull llava-phi3
-```
-
-**"Module not found"**
-```bash
-# Install dependencies
-pip install -r requirements.txt
+# First use loads the model into GPU; increase the timeout if needed
+export OMNI_VISION_TIMEOUT=180
 ```

@@ -1,192 +1,224 @@
-# Omni-Image-Tools MCP
+# omni-image-tools-mcp
 
-Um servidor MCP que dá **visão computacional** para modelos de IA. Ele permite que a IA "veja" imagens: descrever, comparar, extrair texto, recortar objetos e muito mais.
+> A Model Context Protocol (MCP) server that gives **computer vision** to AI models. It lets AI "see" images: describe, compare, extract text, crop objects, and more.
 
-**11 ferramentas** · **4 provedores** · **Funciona com Opencode, Claude, Cursor**
+[![PyPI version](https://img.shields.io/pypi/v/omni-image-tools-mcp.svg)](https://pypi.org/project/omni-image-tools-mcp/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/omni-image-tools-mcp.svg)](https://pypi.org/project/omni-image-tools-mcp/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![CI](https://github.com/alexlivre/omni-image-tools-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/alexlivre/omni-image-tools-mcp/actions)
 
----
-
-## 🤔 Qual provedor usar?
-
-### Se você tem GPU (placa de vídeo) → Ollama
-
-> O modelo roda **no seu computador**, usando sua placa de vídeo. Grátis, privado, sem depender de internet.
-
-**Limite:** sua GPU tem memória finita — por isso só **1 imagem por vez** e modelos menores.
-
-### Se você não tem GPU ou quer mais qualidade → Nuvem
-
-> O modelo roda **na nuvem** (OpenAI, OpenRouter). Pago por uso, precisa de API key, sem limites de imagem.
+**11 tools** · **5 providers** · **Works with opencode, Claude, Cursor**
 
 ---
 
-## Escolha seu modelo
+## Table of Contents
 
-| Para quem... | Use | Tamanho | Onde roda |
-|-------------|-----|---------|-----------|
-| PC fraco ou só testar | `qwen3-vl:2b` | 1.9GB 🟢 | Seu computador (Ollama) |
-| PC mediano | `qwen3-vl:4b` | 3.3GB 🟡 | Seu computador (Ollama) |
-| Qualidade profissional | `gpt-5.4-mini` | ☁️ | Nuvem (OpenAI, pago) |
-| Melhor custo-benefício | `qwen/qwen3-vl-32b-instruct` | ☁️ | Nuvem (OpenRouter, barato) |
-
-> ⚠️ **Memória importa:** Se você tem 4GB de VRAM, use `qwen3-vl:2b`. Com 6GB+, pode usar `qwen3-vl:4b`. Os modelos de nuvem não usam sua GPU.
+- [Why this exists](#why-this-exists)
+- [Which provider to use?](#which-provider-to-use)
+- [Pick your model](#pick-your-model)
+- [Quickstart](#quickstart)
+- [Installation](#installation)
+- [Tools](#tools)
+- [Configuration](#configuration)
+- [Provider setup](#provider-setup)
+- [Security](#security)
+- [GPU memory management](#gpu-memory-management)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [License](#license)
 
 ---
 
-## 🚀 Início Rápido
+## Why this exists
+
+If you use an MCP-aware LLM client and want your AI to **see** images, you need a local bridge between the client and a vision model. This server is that bridge:
+
+- Speaks MCP over **stdio** (works with any compliant client)
+- Supports **local** (Ollama, LM Studio) and **cloud** (OpenAI, OpenRouter, MiniMax) vision providers
+- Preprocesses images automatically (resize, compress, cache) before sending them upstream
+- Exposes both **AI vision** tools (describe, OCR, object detection, compare) and **deterministic processing** tools (crop, convert, resize, download)
+- `extract_object` finds and crops any object described in text — automatically
+
+## Which provider to use?
+
+### If you have a GPU → Ollama
+
+> The model runs **on your computer**, using your graphics card. Free, private, no internet needed.
+
+**Limit:** your GPU has finite memory — that's why it's **1 image at a time** with smaller models.
+
+### If you have no GPU or want more quality → Cloud
+
+> The model runs **in the cloud** (OpenAI, OpenRouter, MiniMax). Pay-per-use, needs an API key, no image limits.
+
+## Pick your model
+
+| For... | Use | Size | Where it runs |
+|--------|-----|------|---------------|
+| Weak PC or just testing | `qwen3-vl:2b` | 1.9GB 🟢 | Your computer (Ollama) |
+| Mid-range PC | `qwen3-vl:4b` | 3.3GB 🟡 | Your computer (Ollama) |
+| Professional quality | `gpt-5.4-mini` | ☁️ | Cloud (OpenAI, paid) |
+| Best value | `qwen/qwen3-vl-32b-instruct` | ☁️ | Cloud (OpenRouter, cheap) |
+| Multimodal frontier | `MiniMax-M3` | ☁️ | Cloud (MiniMax) |
+
+> ⚠️ **Memory matters:** with 4GB of VRAM use `qwen3-vl:2b`; with 6GB+ you can use `qwen3-vl:4b`. Cloud models don't touch your GPU.
+
+## Quickstart
 
 ```bash
-# 1. Baixar e instalar (requer uv: https://docs.astral.sh/uv/)
-git clone https://github.com/alexlivre/omni-image-tools-mcp
+# 1. Install via pip (requires uv: https://docs.astral.sh/uv/)
+pip install omni-image-tools-mcp
+
+# 2. If using Ollama (free, local):
+export OMNI_VISION_PROVIDER=ollama
+export OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
+
+# 3. Configure your MCP client (see below) and restart it
+```
+
+> 💡 **Tip:** want to use the cloud? See [Provider setup](#provider-setup) below. The `omni-image-tools` console script starts the MCP server over stdio and waits for the client to connect.
+
+## Installation
+
+### Prerequisites
+
+- **Python 3.10+**
+- A vision provider: [Ollama](https://ollama.com) installed locally, or an API key for one of the cloud providers
+
+### Option A — From PyPI (recommended for end users)
+
+```bash
+pip install omni-image-tools-mcp
+```
+
+The `omni-image-tools` console script is installed automatically. Configure your MCP client (examples below), then **restart it**.
+
+### Option B — From source (for contributors)
+
+```bash
+git clone https://github.com/alexlivre/omni-image-tools-mcp.git
 cd omni-image-tools-mcp
 uv sync
 uv sync --extra dev
-
-# 2. Se for usar Ollama (grátis, local):
-set OMNI_VISION_PROVIDER=ollama
-set OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
-
-# 3. Testar
-uv run python scripts/cli.py analyze --image foto.jpg --prompt "O que tem nesta imagem?"
 ```
 
-> 💡 **Dica:** Se quiser usar nuvem, veja a seção [Como configurar cada provedor](#-como-configurar-cada-provedor) mais abaixo.
+## Tools
 
----
+### 👁️ Vision (use AI)
 
-## 🧰 Ferramentas
+| Tool | What it does | With Ollama | With Cloud |
+|------|--------------|-------------|------------|
+| `analyze_image` | Analyze an image with a free prompt | 1 image at a time | Multiple images |
+| `identify_objects` | Detect objects in an image | 1 image at a time | Multiple images |
+| `read_text` | Extract text (OCR) | 1 image at a time | Multiple images |
+| `compare_images` | Compare 2–10 images | Processes one by one | Processes all together |
 
-### 👁️ Visão (usam inteligência artificial)
+> **Why does Ollama have a 1-image limit?** Because GPU memory is limited. Sending several images at once can blow the memory and freeze everything. The system **automatically** manages this — no such problem in the cloud.
 
-| Ferramenta | Pra que serve | Com Ollama | Com Nuvem |
-|------------|--------------|------------|-----------|
-| `analyze_image` | Analisar imagem com prompt livre | 1 imagem por vez | Várias imagens |
-| `identify_objects` | Detectar objetos na imagem | 1 imagem por vez | Várias imagens |
-| `read_text` | Extrair texto (OCR) | 1 imagem por vez | Várias imagens |
-| `compare_images` | Comparar 2 a 10 imagens | Processa uma por uma | Processa tudo junto |
+### 🛠️ Processing (no AI, fast)
 
-> **Por que o Ollama tem limite de 1 imagem?** Porque a memória da GPU é limitada. Enviar várias imagens de uma vez pode estourar a memória e travar tudo. O sistema **automaticamente** gerencia isso — na nuvem não tem esse problema.
+| Tool | What it does |
+|------|--------------|
+| `prepare_image` | Resize and optimize an image |
+| `get_image_info` | Read image metadata (size, format, etc.) |
+| `crop_image` | Crop a region of an image |
+| `convert_image_format` | Convert format (JPEG, PNG, WEBP...) |
+| `download_image` | Download an image from the web |
+| `extract_object` | **Find and crop an object automatically** |
 
-### 🛠️ Processamento (não usam IA, são rápidas)
+### ⚙️ System
 
-| Ferramenta | Pra que serve |
-|------------|--------------|
-| `prepare_image` | Redimensionar e otimizar foto |
-| `get_image_info` | Ver dados da foto (tamanho, formato, etc) |
-| `crop_image` | Recortar uma parte da foto |
-| `convert_image_format` | Mudar formato (JPEG, PNG, WEBP...) |
-| `download_image` | Baixar foto da internet |
-| `extract_object` | **Achar e recortar um objeto automaticamente** |
+| Tool | What it does |
+|------|--------------|
+| `get_provider_info` | Shows the active provider and its limits |
 
-### ⚙️ Sistema
+## Configuration
 
-| Ferramenta | Pra que serve |
-|------------|--------------|
-| `get_provider_info` | Mostra qual provedor está ativo e seus limites |
+### Environment variables
 
----
+| Variable | Required | Default | What it does |
+|----------|----------|---------|--------------|
+| `OMNI_VISION_PROVIDER` | ✅ | — | `ollama`, `openrouter`, `openai`, `lmstudio` or `minimax` |
+| `OMNI_VISION_API_KEY` | Cloud only | — | Your provider key |
+| `MINIMAX_API_KEY` | MiniMax fallback | — | MiniMax key used when `OMNI_VISION_API_KEY` is unset |
+| `MINIMAX_BASE_URL` | ❌ | `https://api.minimax.io/v1` | MiniMax endpoint (China: `https://api.minimaxi.com/v1`) |
+| `OMNI_VISION_DEFAULT_MODEL` | ❌ | Varies | Which model to use |
+| `OMNI_VISION_TIMEOUT` | ❌ | 120s | Max wait time |
+| `OLLAMA_ALLOWED_MODELS` | ❌ | `qwen3-vl:4b,qwen3-vl:2b` | Allowed Ollama models (CSV) |
+| `OMNI_OUTPUT_DIR` | ❌ | `./outputs` | Where `extract_object`/`download_image` write files |
+| `OMNI_ALLOWED_DIRS` | ❌ | (empty = no sandbox) | Allowed directories for `image_path` (separated by `;`) — path-traversal protection |
 
-## 🌟 Ferramenta Destaque: `extract_object`
+## Provider setup
 
-Essa ferramenta é **inteligente**: você diz o que quer recortar e ela acha sozinha.
+### Option A: Ollama (free, local)
+
+> Requires [Ollama](https://ollama.com) installed and the model pulled (`ollama pull qwen3-vl:2b`)
 
 ```bash
-uv run python scripts/cli.py extract --image carro.jpg --object "license plate"
+export OMNI_VISION_PROVIDER=ollama
+export OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
 ```
 
-**O que acontece por dentro:**
-1. A IA localiza o objeto na imagem → coordenadas
-2. O sistema recorta automaticamente a região
-3. Salva o recorte em `outputs/` (ou o diretório definido por `OMNI_OUTPUT_DIR`)
+### Option B: OpenAI (cloud, paid)
 
-Útil para: placas de carro, rostos, logotipos, textos específicos, qualquer objeto visível.
-
----
-
-## ⚙️ Como configurar cada provedor
-
-### Opção A: Ollama (gratuito, local)
-
-> Requer: [Ollama](https://ollama.com) instalado e o modelo baixado (`ollama pull qwen3-vl:2b`)
+> Requires an [OpenAI API key](https://platform.openai.com/api-keys)
 
 ```bash
-set OMNI_VISION_PROVIDER=ollama
-set OMNI_VISION_DEFAULT_MODEL=qwen3-vl:2b
+export OMNI_VISION_PROVIDER=openai
+export OMNI_VISION_API_KEY=sk-proj-your-key-here
+export OMNI_VISION_DEFAULT_MODEL=gpt-5.4-mini
 ```
 
-### Opção B: OpenAI (nuvem, pago)
+### Option C: OpenRouter (cloud, cheap)
 
-> Requer: [API key da OpenAI](https://platform.openai.com/api-keys)
+> Requires an [OpenRouter API key](https://openrouter.ai/keys)
 
 ```bash
-set OMNI_VISION_PROVIDER=openai
-set OMNI_VISION_API_KEY=sk-proj-sua-chave-aqui
-set OMNI_VISION_DEFAULT_MODEL=gpt-5.4-mini
+export OMNI_VISION_PROVIDER=openrouter
+export OMNI_VISION_API_KEY=sk-or-v1-your-key-here
+export OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
 ```
 
-### Opção C: OpenRouter (nuvem, barato)
+### Option D: MiniMax (cloud, MiniMax-M3 multimodal)
 
-> Requer: [API key do OpenRouter](https://openrouter.ai/keys)
+> Requires a [MiniMax API key](https://platform.minimax.io). Supports both platforms:
+> - **International (minimax.io)** — default, no extra config
+> - **China (minimaxi.com)** — set `MINIMAX_BASE_URL=https://api.minimaxi.com/v1`
 
 ```bash
-set OMNI_VISION_PROVIDER=openrouter
-set OMNI_VISION_API_KEY=sk-or-v1-sua-chave-aqui
-set OMNI_VISION_DEFAULT_MODEL=qwen/qwen3-vl-32b-instruct
+# International (default)
+export OMNI_VISION_PROVIDER=minimax
+export MINIMAX_API_KEY=your-key-here
+
+# China (optional)
+export MINIMAX_BASE_URL=https://api.minimaxi.com/v1
 ```
 
-### Opção D: MiniMax (nuvem, MiniMax-M3 multimodal)
+> 💡 The key can come from `OMNI_VISION_API_KEY` or `MINIMAX_API_KEY` (the latter is used as a fallback — handy if it's already in your system environment variables).
 
-> Requer: [API key da MiniMax](https://platform.minimax.io). Suporta as duas plataformas:
-> - **Internacional (minimax.io)** — padrão, sem config extra
-> - **China (minimaxi.com)** — defina `MINIMAX_BASE_URL=https://api.minimaxi.com/v1`
+### LM Studio (local)
+
+> Requires [LM Studio](https://lmstudio.ai) running with the server enabled on port 1234.
 
 ```bash
-# Internacional (padrão)
-set OMNI_VISION_PROVIDER=minimax
-set MINIMAX_API_KEY=sua-chave-aqui
-
-# China (opcional)
-set MINIMAX_BASE_URL=https://api.minimaxi.com/v1
+export OMNI_VISION_PROVIDER=lmstudio
+export LMSTUDIO_BASE_URL=http://localhost:1234
+export OMNI_VISION_DEFAULT_MODEL=qwen2.5-vl-7b-instruct
 ```
 
-> 💡 A chave pode vir de `OMNI_VISION_API_KEY` ou `MINIMAX_API_KEY` (esta última é usada como fallback, útil se já estiver nas variáveis de ambiente do sistema).
+## Configuring MCP clients
 
-### Todas as opções
+### opencode
 
-| Variável | Obrigatório | Padrão | O que faz |
-|----------|-------------|--------|-----------|
-| `OMNI_VISION_PROVIDER` | ✅ Sim | — | `ollama`, `openrouter`, `openai`, `lmstudio` ou `minimax` |
-| `OMNI_VISION_API_KEY` | Só nuvem | — | Sua chave do provedor |
-| `MINIMAX_API_KEY` | Fallback do MiniMax | — | Chave MiniMax usada se `OMNI_VISION_API_KEY` não existir |
-| `MINIMAX_BASE_URL` | ❌ Não | `https://api.minimax.io/v1` | Endpoint MiniMax (China: `https://api.minimaxi.com/v1`) |
-| `OMNI_VISION_DEFAULT_MODEL` | ❌ Não | Varia | Qual modelo usar |
-| `OMNI_VISION_TIMEOUT` | ❌ Não | 120s | Tempo máximo de espera |
-| `OLLAMA_ALLOWED_MODELS` | ❌ Não | `qwen3-vl:4b,qwen3-vl:2b` | Modelos permitidos no Ollama (CSV) |
-| `OMNI_OUTPUT_DIR` | ❌ Não | `./outputs` | Onde `extract_object`/`download_image` gravam arquivos |
-| `OMNI_ALLOWED_DIRS` | ❌ Não | (vazio = sem sandbox) | Lista de diretórios permitidos para `image_path` (separados por `;`) — proteção contra path traversal |
-
-### 🔒 Segurança embutida
-
-- **SSRF:** `download_image` bloqueia IPs privados/loopback/link-local (ex.: `169.254.169.254`), hosts que resolvam para eles, e revalida cada redirect.
-- **Path traversal:** todos os `image_path` são resolvidos (`resolve()` segue symlinks); com `OMNI_ALLOWED_DIRS` configurado, caminhos fora do sandbox são rejeitados.
-- **Downloads limitados:** download é em streaming com teto de 20 MB (Content-Length + contador de bytes).
-- **Privacidade:** `get_image_info` retorna EXIF desligado por padrão (`include_exif`); se ativado e houver GPS, um aviso é adicionado.
-
----
-
-## 🔌 Integração com Opencode
-
-> **Nota:** o servidor agora roda sobre o **FastMCP**, o que adiciona relatório de progresso e timeouts por ferramenta. O console script `omni-image-tools` usa o novo entry point `src.server_fastmcp:main`. O antigo `src/server.py` permanece como fallback (`python -m src.server`) por uma release (é ele que emite `structuredContent`/`outputSchema`).
-
-Adicione no arquivo `~/.config/opencode/opencode.json`:
+Add to `~/.config/opencode/opencode.json`:
 
 ```json
 {
   "mcp": {
     "omni-image-tools": {
       "type": "local",
-      "command": ["C:\\caminho\\omni-image-tools-mcp\\.venv\\Scripts\\python.exe", "-m", "src.server"],
-      "cwd": "C:\\caminho\\omni-image-tools-mcp",
+      "command": ["omni-image-tools"],
       "environment": {
         "OMNI_VISION_PROVIDER": "ollama",
         "OMNI_VISION_DEFAULT_MODEL": "qwen3-vl:2b"
@@ -197,106 +229,77 @@ Adicione no arquivo `~/.config/opencode/opencode.json`:
 }
 ```
 
-#### Ollama (local, gratuito)
+#### MiniMax example
 
 ```json
-"environment": {
-  "OMNI_VISION_PROVIDER": "ollama",
-  "OMNI_VISION_DEFAULT_MODEL": "qwen3-vl:2b"
+{
+  "mcp": {
+    "omni-image-tools": {
+      "type": "local",
+      "command": ["omni-image-tools"],
+      "environment": {
+        "OMNI_VISION_PROVIDER": "minimax",
+        "MINIMAX_API_KEY": "{env:MINIMAX_API_KEY}",
+        "OMNI_VISION_DEFAULT_MODEL": "MiniMax-M3"
+      },
+      "enabled": true
+    }
+  }
 }
 ```
 
-#### OpenAI (nuvem, pago)
+> **Note:** if the server is installed in a virtualenv, point `command` at the `omni-image-tools` executable inside that venv. After changing config, **restart opencode**.
 
-Requer [API key](https://platform.openai.com/api-keys).
+Also works with [Claude Desktop](https://claude.ai/download) and [Cursor](https://cursor.sh).
 
-```json
-"environment": {
-  "OMNI_VISION_PROVIDER": "openai",
-  "OMNI_VISION_API_KEY": "sk-proj-sua-chave-aqui",
-  "OMNI_VISION_DEFAULT_MODEL": "gpt-5.4-mini"
-}
-```
+## Security
 
-#### OpenRouter (nuvem, barato)
+- **SSRF:** `download_image` blocks private/loopback/link-local IPs (e.g. `169.254.169.254`), hosts that resolve to them, and revalidates every redirect.
+- **Path traversal:** all `image_path` values are resolved (`resolve()` follows symlinks); with `OMNI_ALLOWED_DIRS` configured, paths outside the sandbox are rejected.
+- **Limited downloads:** download is streamed with a 20 MB cap (Content-Length + byte counter).
+- **Privacy:** `get_image_info` returns EXIF off by default (`include_exif`); if enabled and GPS is present, a warning is added.
 
-Requer [API key](https://openrouter.ai/keys).
+## GPU memory management
 
-```json
-"environment": {
-  "OMNI_VISION_PROVIDER": "openrouter",
-  "OMNI_VISION_API_KEY": "sk-or-v1-sua-chave-aqui",
-  "OMNI_VISION_DEFAULT_MODEL": "qwen/qwen3-vl-32b-instruct"
-}
-```
+**Only applies if you use Ollama (local).**
 
-#### MiniMax (nuvem, MiniMax-M3)
-
-Requer [API key da MiniMax](https://platform.minimax.io).
-
-```json
-"environment": {
-  "OMNI_VISION_PROVIDER": "minimax",
-  "MINIMAX_API_KEY": "{env:MINIMAX_API_KEY}",
-  "OMNI_VISION_DEFAULT_MODEL": "MiniMax-M3"
-}
-```
-
-Para a plataforma China, adicione `"MINIMAX_BASE_URL": "https://api.minimaxi.com/v1"`.
-
-> **Lembrete:** O `command` deve apontar para o `python.exe` da pasta `.venv` do projeto. Depois de alterar, **reinicie o opencode**.
-
-Também funciona no [Claude Desktop](https://claude.ai/download) e [Cursor IDE](https://cursor.sh).
-
----
-
-## 🖥️ Gerenciamento de Memória GPU
-
-**Só se aplica se você usa Ollama (local).**
-
-Quando você usa Ollama, o modelo fica carregado na memória da placa de vídeo. Se você pedir para carregar outro modelo, o sistema **automaticamente descarrega o anterior** antes de carregar o novo — evitando que a memória estoure.
+When you use Ollama, the model stays loaded in your GPU memory. If you ask to load another model, the system **automatically unloads the previous one** first — preventing memory overflow.
 
 ```bash
-uv run python scripts/cli.py gpu-status                    # Ver o que está carregado
-uv run python scripts/cli.py gpu-status --unload-ollama modelo  # Forçar descarregar
+omni-image-tools gpu-status                    # See what's loaded
+omni-image-tools gpu-status --unload-ollama model  # Force unload
 ```
 
-Isso tudo acontece **automagicamente** — você não precisa se preocupar.
+This all happens **automagically** — you don't need to worry about it.
 
----
+## Troubleshooting
 
-## ❓ Problemas Comuns
+| Problem | Why it happens | How to fix |
+|---------|----------------|------------|
+| "Provider not found" | You didn't configure the provider | Set `OMNI_VISION_PROVIDER` |
+| "API key required" | Cloud provider without a key | Add `OMNI_VISION_API_KEY` |
+| Takes too long to respond | Big model on a weak PC | Increase `OMNI_VISION_TIMEOUT` or use a smaller model |
+| "Request timed out" | First time using the model | The model needs to load into GPU (only the first time) |
+| No GPU memory | Too many models loaded | The system manages automatically |
 
-| Problema | Por que acontece | Como resolver |
-|----------|-----------------|---------------|
-| "Provider não encontrado" | Você não configurou o provedor | Configure `OMNI_VISION_PROVIDER` |
-| "API Key requerida" | Provider de nuvem sem chave | Adicione `OMNI_VISION_API_KEY` |
-| Demora muito para responder | Modelo grande em PC fraco | Aumente `OMNI_VISION_TIMEOUT` ou use modelo menor |
-| "Request timed out" | Primeira vez usando o modelo | O modelo precisa carregar na GPU (só na primeira vez) |
-| GPU sem memória | Muitos modelos carregados | O sistema gerencia automaticamente |
+## Development
 
----
+```bash
+uv sync
+uv sync --extra dev
 
-## 📁 Estrutura do Projeto
+# Test (pytest)
+uv run pytest tests/ -v
 
-```
-src/
-├── server.py              # Servidor que se comunica com a IA
-├── config.py              # Configurações
-├── providers/
-│   ├── ollama.py          # Conexão com Ollama (local)
-│   ├── openrouter.py      # Conexão com OpenRouter (nuvem)
-│   ├── openai.py          # Conexão com OpenAI (nuvem)
-│   └── minimax.py         # Conexão com MiniMax (nuvem, M3)
-├── tools/
-│   ├── vision/            # Ferramentas de visão (IA)
-│   └── processing/        # Ferramentas de processamento (PIL)
-└── utils/
-    └── gpu_memory.py      # Controle de memória da GPU
+# Lint / format / type
+uv run ruff check src/ tests/
+uv run black src/ tests/ --line-length 100
+uv run mypy src/ --python-version 3.10
+
+# CLI for manual testing
+uv run python scripts/cli.py analyze --image test.jpg --prompt "Describe this"
 ```
 
----
+## License
 
-## 📄 Licença
-
-MIT
+[MIT](./LICENSE) © 2026 [Alex Santos](https://alexlivre.dev/) ([@alexlivre](https://github.com/alexlivre))
