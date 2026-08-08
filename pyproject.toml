@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omni-image-tools-mcp"
-version = "0.6.0"
+version = "0.6.1"
 description = "MCP server with image tools (vision + processing) supporting multiple providers"
 authors = [
-    {name = "Alex Borisov"}
+    {name = "Alex Santos"}
 ]
 readme = "README.md"
 license = "MIT"
