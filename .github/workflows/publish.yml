@@ -12,6 +12,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: pypi
     # Usa Trusted Publishing (sem token exposto). Requer configurar o
     # publisher em: https://pypi.org/manage/account/publishing/
     permissions:
