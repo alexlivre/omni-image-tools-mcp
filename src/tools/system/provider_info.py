@@ -54,6 +54,7 @@ def _get_provider_description(provider: str, is_local: bool, image_limit: int | 
         "ollama": "Ollama local vision model",
         "openrouter": "OpenRouter cloud API",
         "openai": "OpenAI cloud API",
+        "lmstudio": "LM Studio local server",
     }
     base = descriptions.get(provider, provider)
     if is_local:

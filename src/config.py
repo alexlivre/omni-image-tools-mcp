@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from .errors import ConfigError
 
 
-ProviderType = Literal["ollama", "openrouter", "openai"]
+ProviderType = Literal["ollama", "openrouter", "openai", "lmstudio"]
 
 
 class OllamaConfig(BaseModel):
@@ -25,15 +25,23 @@ class OpenAIConfig(BaseModel):
     default_model: str = Field(default="gpt-5.4-mini")
 
 
+class LMStudioConfig(BaseModel):
+    base_url: str = Field(default="http://localhost:1234")
+    default_model: str = Field(default="qwen2.5-vl-7b-instruct")
+
+
 class Config(BaseModel):
     provider: ProviderType
     api_key: str | None = None
     default_model: str | None = None
     timeout: int = Field(default=120)
+    max_retries: int = Field(default=3)
+    fallback_models: list[str] = Field(default_factory=list)
 
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openrouter: OpenRouterConfig | None = None
     openai: OpenAIConfig | None = None
+    lmstudio: LMStudioConfig | None = None
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -44,9 +52,9 @@ class Config(BaseModel):
                 missing_key="OMNI_VISION_PROVIDER",
             )
 
-        if provider not in ["ollama", "openrouter", "openai"]:
+        if provider not in ["ollama", "openrouter", "openai", "lmstudio"]:
             raise ConfigError(
-                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai",
+                message=f"Invalid provider: {provider}. Must be one of: ollama, openrouter, openai, lmstudio",
             )
 
         api_key = os.getenv("OMNI_VISION_API_KEY")
@@ -64,6 +72,18 @@ class Config(BaseModel):
                 message=f"OMNI_VISION_TIMEOUT must be an integer, got: {timeout_str}",
             )
 
+        max_retries_str = os.getenv("OMNI_VISION_MAX_RETRIES", "3")
+        try:
+            max_retries = int(max_retries_str)
+        except ValueError:
+            raise ConfigError(
+                message=f"OMNI_VISION_MAX_RETRIES must be an integer, got: {max_retries_str}",
+            )
+
+        fallback_models = [
+            m.strip() for m in os.getenv("OMNI_FALLBACK_MODELS", "").split(",") if m.strip()
+        ]
+
         ollama_allowed = os.getenv("OLLAMA_ALLOWED_MODELS", "qwen3-vl:4b,qwen3-vl:2b")
         ollama_auto_pull_str = os.getenv("OLLAMA_AUTO_PULL", "false").lower()
         ollama_auto_pull = ollama_auto_pull_str in ["true", "1", "yes"]
@@ -73,6 +93,8 @@ class Config(BaseModel):
             api_key=api_key,
             default_model=os.getenv("OMNI_VISION_DEFAULT_MODEL"),
             timeout=timeout,
+            max_retries=max_retries,
+            fallback_models=fallback_models,
             ollama=OllamaConfig(
                 base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
                 allowed_models=ollama_allowed.split(","),
@@ -89,6 +111,11 @@ class Config(BaseModel):
             config.openai = OpenAIConfig(
                 api_key=api_key or "",
                 default_model=config.default_model or "gpt-5.4-mini",
+            )
+        elif provider == "lmstudio":
+            config.lmstudio = LMStudioConfig(
+                base_url=os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234"),
+                default_model=config.default_model or "qwen2.5-vl-7b-instruct",
             )
 
         return config

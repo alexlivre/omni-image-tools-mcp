@@ -8,7 +8,7 @@ Supports: Ollama, OpenRouter, OpenAI
 import asyncio
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 import mcp.server.stdio
 import mcp.types as types
@@ -61,6 +61,7 @@ class OmniImageToolsServer:
                     title=schema.get("title"),
                     description=schema.get("description", ""),
                     inputSchema=schema.get("inputSchema", {}),
+                    outputSchema=schema.get("outputSchema"),
                     annotations=types.ToolAnnotations(**schema["annotations"])
                     if schema.get("annotations")
                     else None,
@@ -129,9 +130,10 @@ class OmniImageToolsServer:
             )
 
 
-def _validate_image_paths(arguments: dict[str, Any]) -> None:
+def _validate_image_paths(arguments: dict[str, Any], allowed_roots: list | None = None) -> None:
     """Resolve and validate every image path argument (anti path traversal)."""
-    allowed_roots = _allowed_roots()
+    if allowed_roots is None:
+        allowed_roots = _allowed_roots()
     targets = []
     if isinstance(arguments.get("image_path"), str):
         targets.append(arguments["image_path"])
@@ -169,9 +171,22 @@ def _result_text(result: Any) -> str:
     return str(result)
 
 
+def _structured(result: Any) -> dict | None:
+    if not isinstance(result, dict):
+        return None
+    clean = {k: v for k, v in result.items() if k not in ("output_data", "content_warning")}
+    try:
+        import json
+
+        return cast(dict, json.loads(json.dumps(clean, default=str)))
+    except (TypeError, ValueError):
+        return None
+
+
 def _success_result(result: Any) -> types.CallToolResult:
     return types.CallToolResult(
         content=[types.TextContent(type="text", text=_result_text(result))],
+        structuredContent=_structured(result),
         isError=False,
     )
 
